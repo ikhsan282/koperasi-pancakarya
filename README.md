@@ -10,6 +10,8 @@ Sistem Manajemen Koperasi - PHP Native dengan MySQLi
 - **Laporan**: Dashboard statistik dan log aktivitas
 - **Role-Based Access Control**: Super Admin, Admin, Bendahara, Anggota
 - **Activity Logging**: Audit trail lengkap
+- **PWA & Portal Mobile**: Portal anggota dapat dipasang di ponsel dan memiliki fallback offline
+- **Dark Mode**: Tema gelap persisten untuk dashboard dan portal
 
 ## Teknologi
 

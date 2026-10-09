@@ -7,6 +7,12 @@ $title = $title ?? APP_NAME;
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title><?= e($title) ?> · <?= e(APP_NAME) ?></title>
+    <script>
+    (function(){try{var t=localStorage.getItem('pancakarya_theme');if(!t)t=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';document.documentElement.setAttribute('data-bs-theme',t);}catch(e){}})();
+    </script>
+    <link rel="manifest" href="<?= url('manifest.json') ?>">
+    <meta name="theme-color" content="#667eea">
+    <script>window.APP_URL = <?= json_encode(APP_URL) ?>;</script>
     <link rel="stylesheet" href="<?= url('public/css/app.css') ?>">
 </head>
 <body>
@@ -23,6 +29,10 @@ $title = $title ?? APP_NAME;
         <div class="sidebar-user"><small>Masuk sebagai</small><strong><?= e(current_user()['name']) ?></strong><a href="<?= url('pages/auth/logout.php') ?>">Keluar</a></div>
     </aside>
     <main>
-        <header class="topbar"><button class="menu" type="button" aria-label="Buka menu">☰</button><div><h1><?= e($title) ?></h1><small><?= date('d/m/Y') ?></small></div></header>
+        <header class="topbar">
+            <button class="menu" type="button" aria-label="Buka menu">☰</button>
+            <div><h1><?= e($title) ?></h1><small><?= date('d/m/Y') ?></small></div>
+            <button class="dark-toggle" type="button" aria-label="Toggle tema" style="margin-left: auto;">🌙</button>
+        </header>
         <section class="content">
             <?php if ($flash): ?><div class="alert <?= e($flash['type']) ?>"><?= e($flash['message']) ?></div><?php endif; ?>

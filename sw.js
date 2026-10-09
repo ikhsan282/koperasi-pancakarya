@@ -1,9 +1,6 @@
-const CACHE_NAME = 'pancakarya-v1';
+const CACHE_NAME = 'pancakarya-v2';
 const OFFLINE_ASSETS = [
-  '/koperasi-pancakarya/',
-  '/koperasi-pancakarya/offline.html',
-  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css',
-  'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.css'
+  '/koperasi-pancakarya/offline.html'
 ];
 
 self.addEventListener('install', e => {
@@ -23,7 +20,7 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
+  if (e.request.method !== 'GET' || e.request.mode === 'navigate') return;
   
   e.respondWith(
     caches.match(e.request).then(cached => {
