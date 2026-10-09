@@ -9,14 +9,14 @@ CREATE TABLE IF NOT EXISTS `sequences` (
 
 -- Initialize sequences for existing data
 INSERT INTO `sequences` (`name`, `current_value`)
-SELECT 'member_number_' || DATE_FORMAT(CURDATE(), '%Y%m'), 
+SELECT CONCAT('member_number_', DATE_FORMAT(CURDATE(), '%Y%m')), 
        COALESCE(MAX(CAST(SUBSTRING(member_number, -4) AS UNSIGNED)), 0)
 FROM members 
 WHERE member_number LIKE CONCAT('KP-', DATE_FORMAT(CURDATE(), '%Y%m'), '-%')
 ON DUPLICATE KEY UPDATE current_value = VALUES(current_value);
 
 INSERT INTO `sequences` (`name`, `current_value`)
-SELECT 'loan_number_' || DATE_FORMAT(CURDATE(), '%Y%m'),
+SELECT CONCAT('loan_number_', DATE_FORMAT(CURDATE(), '%Y%m')),
        COALESCE(MAX(CAST(SUBSTRING(loan_number, -4) AS UNSIGNED)), 0)
 FROM loans
 WHERE loan_number LIKE CONCAT('L-', DATE_FORMAT(CURDATE(), '%Y%m'), '-%')
