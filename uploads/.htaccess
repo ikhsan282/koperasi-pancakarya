@@ -2,7 +2,7 @@
 Options -Indexes
 
 # Disable script execution
-<IfModule mod_php7.c>
+<IfModule mod_php.c>
 php_flag engine off
 </IfModule>
 <IfModule mod_php8.c>

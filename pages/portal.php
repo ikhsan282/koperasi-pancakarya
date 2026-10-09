@@ -158,7 +158,7 @@ foreach ($all_loans as $loan) {
     <link rel="manifest" href="<?= url('manifest.json') ?>">
     <meta name="theme-color" content="#667eea">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.css" rel="stylesheet">
     <script>
     (function(){try{var t=localStorage.getItem('pancakarya_theme');if(!t)t=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';document.documentElement.setAttribute('data-bs-theme',t);}catch(e){}})();
     </script>

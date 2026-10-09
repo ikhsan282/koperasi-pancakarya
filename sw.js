@@ -2,8 +2,8 @@ const CACHE_NAME = 'pancakarya-v1';
 const OFFLINE_ASSETS = [
   '/koperasi-pancakarya/',
   '/koperasi-pancakarya/offline.html',
-  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
-  'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css'
+  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css',
+  'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.css'
 ];
 
 self.addEventListener('install', e => {
