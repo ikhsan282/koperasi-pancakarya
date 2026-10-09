@@ -63,6 +63,32 @@ if (($_GET['format'] ?? '') === 'pdf') {
     $pdf->download("Laporan Simpanan {$months[$month]} {$year}.pdf");
 }
 
+if (($_GET['format'] ?? '') === 'xlsx') {
+    require_permission('reports.export');
+    require_once __DIR__ . '/../../includes/xlsx.php';
+    $headers = ['No. Anggota', 'Nama', 'Setoran', 'Penarikan', 'Setoran Bersih', 'Saldo Saat Ini'];
+    $data = [];
+    foreach ($rows as $row) {
+        $data[] = [
+            $row['member_number'],
+            $row['full_name'],
+            (float) $row['deposit_total'],
+            (float) $row['withdrawal_total'],
+            (float) $row['net_total'],
+            (float) $row['current_balance'],
+        ];
+    }
+    $data[] = [
+        'TOTAL',
+        '',
+        (float) $totals['deposit'],
+        (float) $totals['withdrawal'],
+        (float) $totals['net'],
+        (float) $totals['balance'],
+    ];
+    xlsx_export("Laporan_Simpanan_{$months[$month]}_{$year}.xlsx", $headers, $data, "Laporan Simpanan {$months[$month]} {$year}");
+}
+
 require __DIR__ . '/../../includes/header.php';
 ?>
 
@@ -78,6 +104,7 @@ require __DIR__ . '/../../includes/header.php';
     </form>
     <?php if (can('reports.export')): ?>
         <a href="<?= url('pages/reports/savings_export.php?month=' . $month . '&year=' . $year) ?>" class="btn btn-success">Export CSV</a>
+        <a href="<?= url('pages/reports/savings.php?month=' . $month . '&year=' . $year . '&format=xlsx') ?>" class="btn btn-success">Export Excel</a>
         <a href="<?= url('pages/reports/savings.php?month=' . $month . '&year=' . $year . '&format=pdf') ?>" class="btn btn-success">Export PDF</a>
     <?php endif; ?>
 </div>
