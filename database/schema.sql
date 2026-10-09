@@ -176,17 +176,39 @@ CREATE TABLE `savings_transactions` (
   CONSTRAINT `savings_transactions_ibfk_2` FOREIGN KEY (`processed_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Loan products
+CREATE TABLE `loan_products` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `interest_rate` decimal(5,2) NOT NULL COMMENT 'Bunga per bulan FLAT (%)',
+  `max_tenor_months` int(11) NOT NULL,
+  `min_amount` decimal(15,2) NOT NULL,
+  `max_amount` decimal(15,2) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `loan_products` (`name`, `interest_rate`, `max_tenor_months`, `min_amount`, `max_amount`, `is_active`) VALUES
+('Pinjaman Konsumtif', 1.50, 24, 1000000.00, 20000000.00, 1),
+('Pinjaman Produktif', 1.25, 36, 5000000.00, 50000000.00, 1),
+('Pinjaman Darurat', 2.00, 12, 500000.00, 5000000.00, 1),
+('Pinjaman Modal Usaha', 1.00, 48, 10000000.00, 100000000.00, 1);
+
 -- Loans table
 CREATE TABLE `loans` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `member_id` int(11) NOT NULL,
+  `loan_product_id` int(11) DEFAULT NULL,
   `loan_number` varchar(20) NOT NULL,
   `amount` decimal(15,2) NOT NULL,
   `interest_rate` decimal(5,2) NOT NULL,
   `term_months` int(11) NOT NULL,
   `monthly_payment` decimal(15,2) NOT NULL,
   `purpose` text,
-  `status` enum('pending','approved','rejected','active','paid','defaulted') NOT NULL DEFAULT 'pending',
+  `rejection_notes` text DEFAULT NULL,
+  `status` enum('pending','approved','active','completed','rejected','defaulted') NOT NULL DEFAULT 'pending',
   `application_date` date NOT NULL,
   `approval_date` date DEFAULT NULL,
   `disbursement_date` date DEFAULT NULL,
@@ -196,21 +218,27 @@ CREATE TABLE `loans` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `loan_number` (`loan_number`),
   KEY `member_id` (`member_id`),
+  KEY `loan_product_id` (`loan_product_id`),
   KEY `approved_by` (`approved_by`),
   CONSTRAINT `loans_ibfk_1` FOREIGN KEY (`member_id`) REFERENCES `members` (`id`) ON DELETE RESTRICT,
-  CONSTRAINT `loans_ibfk_2` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+  CONSTRAINT `loans_ibfk_2` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `loans_ibfk_3` FOREIGN KEY (`loan_product_id`) REFERENCES `loan_products` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Loan payments
+-- Loan payments (schedule angsuran)
 CREATE TABLE `loan_payments` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `loan_id` int(11) NOT NULL,
-  `payment_date` date NOT NULL,
-  `amount` decimal(15,2) NOT NULL,
+  `due_date` date NOT NULL COMMENT 'Jatuh tempo angsuran',
+  `payment_number` int(11) NOT NULL,
+  `amount` decimal(15,2) NOT NULL DEFAULT 0.00 COMMENT 'Total pembayaran yang diterima',
   `principal_amount` decimal(15,2) NOT NULL,
   `interest_amount` decimal(15,2) NOT NULL,
+  `amount_due` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `amount_paid` decimal(15,2) NOT NULL DEFAULT 0.00,
   `balance_remaining` decimal(15,2) NOT NULL,
-  `payment_number` int(11) NOT NULL,
+  `payment_date` date DEFAULT NULL COMMENT 'NULL = belum dibayar',
+  `status` enum('pending','paid','overdue') NOT NULL DEFAULT 'pending',
   `processed_by` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),

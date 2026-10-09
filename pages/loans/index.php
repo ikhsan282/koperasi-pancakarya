@@ -53,7 +53,7 @@ require __DIR__ . '/../../includes/header.php';
             <option value="pending" <?= $status === 'pending' ? 'selected' : '' ?>>Menunggu</option>
             <option value="approved" <?= $status === 'approved' ? 'selected' : '' ?>>Disetujui</option>
             <option value="active" <?= $status === 'active' ? 'selected' : '' ?>>Aktif</option>
-            <option value="paid" <?= $status === 'paid' ? 'selected' : '' ?>>Lunas</option>
+            <option value="completed" <?= $status === 'completed' ? 'selected' : '' ?>>Selesai/Lunas</option>
             <option value="rejected" <?= $status === 'rejected' ? 'selected' : '' ?>>Ditolak</option>
         </select>
         <button type="submit" class="btn btn-secondary">Filter</button>
@@ -61,6 +61,9 @@ require __DIR__ . '/../../includes/header.php';
     </form>
     <?php if (can('loans.create')): ?>
         <a href="<?= url('pages/loans/form.php') ?>" class="btn btn-primary">+ Ajukan Pinjaman</a>
+    <?php endif; ?>
+    <?php if (can('loans.approve')): ?>
+        <a href="<?= url('pages/loan-products/index.php') ?>" class="btn btn-secondary">Produk Pinjaman</a>
     <?php endif; ?>
 </div>
 
@@ -93,26 +96,13 @@ require __DIR__ . '/../../includes/header.php';
                         <td><?= rupiah($row['monthly_payment']) ?></td>
                         <td>
                             <?php
-                            $badge_class = match($row['status']) {
-                                'approved', 'active' => 'success',
-                                'pending' => 'warning',
-                                'paid' => 'info',
-                                default => 'danger'
-                            };
-                            $status_label = match($row['status']) {
-                                'pending' => 'Menunggu',
-                                'approved' => 'Disetujui',
-                                'active' => 'Aktif',
-                                'paid' => 'Lunas',
-                                'rejected' => 'Ditolak',
-                                'defaulted' => 'Macet',
-                                default => $row['status']
-                            };
+                            $badge_class = ['approved' => 'success', 'active' => 'success', 'pending' => 'warning', 'completed' => 'info'][$row['status']] ?? 'danger';
+                            $status_label = ['pending' => 'Menunggu', 'approved' => 'Disetujui', 'active' => 'Aktif', 'completed' => 'Selesai/Lunas', 'rejected' => 'Ditolak', 'defaulted' => 'Macet'][$row['status']] ?? $row['status'];
                             ?>
                             <span class="badge badge-<?= $badge_class ?>"><?= $status_label ?></span>
                         </td>
                         <td class="actions">
-                            <a href="<?= url('pages/loans/form.php?id=' . $row['id']) ?>" class="btn btn-sm btn-secondary">Detail</a>
+                            <a href="<?= url('pages/loans/detail.php?id=' . $row['id']) ?>" class="btn btn-sm btn-secondary">Detail</a>
                         </td>
                     </tr>
                 <?php endwhile; ?>

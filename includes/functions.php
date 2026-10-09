@@ -70,3 +70,14 @@ function period_label(string $period): string
     $months = [1=>'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
     return $date ? $months[(int) $date->format('n')] . ' ' . $date->format('Y') : $period;
 }
+
+function header_csv_download(string $filename): void
+{
+    $ascii = preg_replace('/[^a-zA-Z0-9_.\\-]/', '_', $filename);
+    $encoded = rawurlencode($filename);
+    header('Content-Type: text/csv; charset=UTF-8');
+    header("Content-Disposition: attachment; filename=\"{$ascii}\"; filename*=UTF-8''{$encoded}");
+    header('Cache-Control: no-cache, no-store, must-revalidate');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+}

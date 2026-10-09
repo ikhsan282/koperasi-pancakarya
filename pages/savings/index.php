@@ -8,10 +8,11 @@ require_permission('savings.view');
 
 $title = 'Simpanan Anggota';
 
-$search = trim($_GET['search'] ?? '');
-$type = isset($_GET['type']) ? (int) $_GET['type'] : 0;
+$member_id = isset($_GET['member_id']) ? (int) $_GET['member_id'] : 0;
 
-$sql = 'SELECT sa.*, m.member_number, m.full_name, st.name AS type_name
+$sql = 'SELECT sa.id, sa.account_number, sa.balance, sa.status,
+               sa.member_id, m.member_number, m.full_name,
+               st.id AS type_id, st.name AS type_name
         FROM savings_accounts sa
         JOIN members m ON sa.member_id = m.id
         JOIN savings_types st ON sa.savings_type_id = st.id
@@ -19,93 +20,123 @@ $sql = 'SELECT sa.*, m.member_number, m.full_name, st.name AS type_name
 $params = [];
 $types = '';
 
-if ($search !== '') {
-    $sql .= ' AND (m.member_number LIKE ? OR m.full_name LIKE ? OR sa.account_number LIKE ?)';
-    $searchTerm = "%{$search}%";
-    $params[] = $searchTerm;
-    $params[] = $searchTerm;
-    $params[] = $searchTerm;
-    $types .= 'sss';
-}
-
-if ($type > 0) {
-    $sql .= ' AND sa.savings_type_id = ?';
-    $params[] = $type;
+if ($member_id > 0) {
+    $sql .= ' AND sa.member_id = ?';
+    $params[] = $member_id;
     $types .= 'i';
 }
 
-$sql .= ' ORDER BY sa.id DESC';
+$sql .= ' ORDER BY m.full_name ASC, st.id ASC, sa.id ASC';
 
 $stmt = db()->prepare($sql);
 if (!empty($params)) {
     $stmt->bind_param($types, ...$params);
 }
 $stmt->execute();
-$accounts = $stmt->get_result();
+$rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-$savings_types = db()->query('SELECT * FROM savings_types WHERE is_active = 1 ORDER BY id');
+// Nest: member -> type -> accounts, with subtotals
+$grouped = [];
+foreach ($rows as $row) {
+    $mid = $row['member_id'];
+    $tid = $row['type_id'];
+    if (!isset($grouped[$mid])) {
+        $grouped[$mid] = [
+            'member_number' => $row['member_number'],
+            'full_name' => $row['full_name'],
+            'types' => [],
+            'total' => 0.0,
+        ];
+    }
+    if (!isset($grouped[$mid]['types'][$tid])) {
+        $grouped[$mid]['types'][$tid] = ['name' => $row['type_name'], 'accounts' => [], 'subtotal' => 0.0];
+    }
+    $grouped[$mid]['types'][$tid]['accounts'][] = $row;
+    $grouped[$mid]['types'][$tid]['subtotal'] += (float) $row['balance'];
+    $grouped[$mid]['total'] += (float) $row['balance'];
+}
+
+$grand = (float) db()->query('SELECT COALESCE(SUM(balance), 0) AS total FROM savings_accounts')->fetch_assoc()['total'];
+
+$members = db()->query('SELECT id, member_number, full_name FROM members WHERE status = "active" ORDER BY full_name ASC');
 
 require __DIR__ . '/../../includes/header.php';
 ?>
 
 <div class="page-actions">
     <form method="get" class="search-form">
-        <input type="text" name="search" placeholder="Cari anggota, no. rekening..." value="<?= e($search) ?>">
-        <select name="type">
-            <option value="">Semua Jenis</option>
-            <?php while ($t = $savings_types->fetch_assoc()): ?>
-                <option value="<?= $t['id'] ?>" <?= $type === (int)$t['id'] ? 'selected' : '' ?>><?= e($t['name']) ?></option>
+        <select name="member_id">
+            <option value="">-- Semua Anggota --</option>
+            <?php while ($m = $members->fetch_assoc()): ?>
+                <option value="<?= $m['id'] ?>" <?= $member_id === (int)$m['id'] ? 'selected' : '' ?>>
+                    <?= e($m['member_number']) ?> - <?= e($m['full_name']) ?>
+                </option>
             <?php endwhile; ?>
         </select>
         <button type="submit" class="btn btn-secondary">Filter</button>
-        <?php if ($search || $type): ?><a href="<?= url('pages/savings/index.php') ?>" class="btn btn-text">Reset</a><?php endif; ?>
+        <?php if ($member_id): ?><a href="<?= url('pages/savings/index.php') ?>" class="btn btn-text">Reset</a><?php endif; ?>
     </form>
     <?php if (can('savings.create')): ?>
-        <a href="<?= url('pages/savings/form.php') ?>" class="btn btn-primary">+ Setoran</a>
+        <a href="<?= url('pages/savings/form.php') ?>" class="btn btn-primary">+ Transaksi Simpanan</a>
     <?php endif; ?>
 </div>
 
+<div class="card" style="margin-bottom: 1rem;">
+    <strong>Total Saldo Simpanan Seluruh Anggota: <?= rupiah($grand) ?></strong>
+</div>
+
 <div class="card">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>No. Rekening</th>
-                <th>Anggota</th>
-                <th>Jenis Simpanan</th>
-                <th>Saldo</th>
-                <th>Status</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if ($accounts->num_rows === 0): ?>
-                <tr><td colspan="6" class="text-center">Belum ada rekening simpanan.</td></tr>
-            <?php else: ?>
-                <?php
-                $accounts->data_seek(0);
-                while ($row = $accounts->fetch_assoc()):
-                ?>
+    <h3>Rekap Simpanan per Anggota</h3>
+    <?php if (empty($grouped)): ?>
+        <p class="text-center">Belum ada data simpanan.</p>
+    <?php else: ?>
+        <?php foreach ($grouped as $mid => $g): ?>
+            <table class="table" style="margin-bottom: 2rem;">
+                <thead>
                     <tr>
-                        <td><strong><?= e($row['account_number']) ?></strong></td>
-                        <td>
-                            <?= e($row['member_number']) ?><br>
-                            <small><?= e($row['full_name']) ?></small>
-                        </td>
-                        <td><?= e($row['type_name']) ?></td>
-                        <td><strong><?= rupiah($row['balance']) ?></strong></td>
-                        <td>
-                            <span class="badge badge-<?= $row['status'] === 'active' ? 'success' : 'danger' ?>">
-                                <?= $row['status'] === 'active' ? 'Aktif' : 'Tutup' ?>
-                            </span>
-                        </td>
-                        <td class="actions">
-                            <a href="<?= url('pages/savings/form.php?account_id=' . $row['id']) ?>" class="btn btn-sm btn-primary">Transaksi</a>
-                        </td>
+                        <th colspan="3">
+                            <?= e($g['member_number']) ?> — <?= e($g['full_name']) ?>
+                            <?php if (can('savings.create')): ?>
+                                <a href="<?= url('pages/savings/form.php?member_id=' . $mid) ?>" class="btn btn-sm btn-text">+ Setoran</a>
+                            <?php endif; ?>
+                        </th>
                     </tr>
-                <?php endwhile; ?>
-            <?php endif; ?>
-        </tbody>
-    </table>
+                    <tr>
+                        <th>Jenis Simpanan / No. Rekening</th>
+                        <th>Status</th>
+                        <th>Subtotal Saldo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($g['types'] as $t): ?>
+                        <tr>
+                            <td colspan="2"><strong><?= e($t['name']) ?></strong></td>
+                            <td><strong><?= rupiah($t['subtotal']) ?></strong></td>
+                        </tr>
+                        <?php foreach ($t['accounts'] as $acc): ?>
+                            <tr>
+                                <td style="padding-left: 2rem;">
+                                    <a href="<?= url('pages/savings/detail.php?id=' . $acc['id']) ?>"><?= e($acc['account_number']) ?></a>
+                                </td>
+                                <td>
+                                    <span class="badge badge-<?= $acc['status'] === 'active' ? 'success' : 'danger' ?>">
+                                        <?= $acc['status'] === 'active' ? 'Aktif' : 'Tutup' ?>
+                                    </span>
+                                </td>
+                                <td><?= rupiah($acc['balance']) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endforeach; ?>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="2" style="text-align: right;">Total <?= e($g['full_name']) ?></th>
+                        <th><?= rupiah($g['total']) ?></th>
+                    </tr>
+                </tfoot>
+            </table>
+        <?php endforeach; ?>
+    <?php endif; ?>
 </div>
 
 <?php require __DIR__ . '/../../includes/footer.php'; ?>

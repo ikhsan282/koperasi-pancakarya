@@ -13,10 +13,12 @@ Sistem Manajemen Koperasi - PHP Native dengan MySQLi
 
 ## Teknologi
 
-- PHP 7.4+
+- PHP 8.5+
 - MySQL 5.7+ / MariaDB 10.3+
 - MySQLi (prepared statements)
-- Bootstrap-inspired CSS
+- Bootstrap 5.3.8 (CDN)
+- Bootstrap Icons 1.13.2 (CDN)
+- Chart.js 4.5.1 (CDN)
 - Vanilla JavaScript
 
 ## Instalasi

@@ -8,79 +8,65 @@ require_permission('reports.view');
 
 $title = 'Laporan';
 
-// Summary stats
-$stmt = db()->query('SELECT 
-    (SELECT COUNT(*) FROM members WHERE status = "active") AS total_members,
-    (SELECT COALESCE(SUM(balance), 0) FROM savings_accounts WHERE status = "active") AS total_savings,
-    (SELECT COUNT(*) FROM loans WHERE status = "active") AS active_loans,
-    (SELECT COALESCE(SUM(l.amount - COALESCE((SELECT SUM(principal_amount) FROM loan_payments WHERE loan_id = l.id), 0)), 0) 
-     FROM loans l WHERE l.status = "active") AS outstanding_loans,
-    (SELECT COUNT(*) FROM savings_transactions WHERE MONTH(transaction_date) = MONTH(CURRENT_DATE) AND YEAR(transaction_date) = YEAR(CURRENT_DATE)) AS savings_trx_this_month,
-    (SELECT COUNT(*) FROM loan_payments WHERE MONTH(payment_date) = MONTH(CURRENT_DATE) AND YEAR(payment_date) = YEAR(CURRENT_DATE)) AS loan_payments_this_month
-');
-$stats = $stmt->fetch_assoc();
-
-// Recent activities
-$activities = db()->query('SELECT * FROM activity_logs ORDER BY id DESC LIMIT 20');
-
 require __DIR__ . '/../../includes/header.php';
 ?>
 
-<div class="report-summary">
-    <div class="report-card">
-        <h4>Anggota Aktif</h4>
-        <div class="report-value"><?= number_format($stats['total_members']) ?></div>
-        <small>Total anggota terdaftar</small>
+<div class="dashboard-stats">
+    <div class="stat-card">
+        <div class="stat-icon">◉</div>
+        <div class="stat-info">
+            <div class="stat-label">Laporan Simpanan</div>
+            <div class="stat-value">Per Periode</div>
+        </div>
     </div>
-    <div class="report-card">
-        <h4>Total Simpanan</h4>
-        <div class="report-value"><?= rupiah($stats['total_savings']) ?></div>
-        <small>Saldo seluruh simpanan</small>
+    <div class="stat-card">
+        <div class="stat-icon">◇</div>
+        <div class="stat-info">
+            <div class="stat-label">Laporan Pinjaman</div>
+            <div class="stat-value">Outstanding</div>
+        </div>
     </div>
-    <div class="report-card">
-        <h4>Pinjaman Aktif</h4>
-        <div class="report-value"><?= number_format($stats['active_loans']) ?></div>
-        <small><?= rupiah($stats['outstanding_loans']) ?> outstanding</small>
-    </div>
-</div>
-
-<div class="report-summary">
-    <div class="report-card">
-        <h4>Transaksi Simpanan</h4>
-        <div class="report-value"><?= number_format($stats['savings_trx_this_month']) ?></div>
-        <small>Bulan ini</small>
-    </div>
-    <div class="report-card">
-        <h4>Pembayaran Pinjaman</h4>
-        <div class="report-value"><?= number_format($stats['loan_payments_this_month']) ?></div>
-        <small>Bulan ini</small>
+    <div class="stat-card">
+        <div class="stat-icon">▤</div>
+        <div class="stat-info">
+            <div class="stat-label">Laporan Arus Kas</div>
+            <div class="stat-value">Per Tahun</div>
+        </div>
     </div>
 </div>
 
 <div class="card">
-    <h3>Aktivitas Terbaru</h3>
+    <h3>Laporan Tersedia</h3>
     <table class="table">
         <thead>
             <tr>
-                <th>Waktu</th>
+                <th>Nama Laporan</th>
+                <th>Deskripsi</th>
                 <th>Aksi</th>
-                <th>Keterangan</th>
-                <th>IP Address</th>
             </tr>
         </thead>
         <tbody>
-            <?php if ($activities->num_rows === 0): ?>
-                <tr><td colspan="4" class="text-center">Belum ada aktivitas.</td></tr>
-            <?php else: ?>
-                <?php while ($row = $activities->fetch_assoc()): ?>
-                    <tr>
-                        <td><?= date('d/m/Y H:i', strtotime($row['created_at'])) ?></td>
-                        <td><span class="badge badge-info"><?= e($row['action']) ?></span></td>
-                        <td><?= e($row['description'] ?? '-') ?></td>
-                        <td><small><?= e($row['ip_address'] ?? '-') ?></small></td>
-                    </tr>
-                <?php endwhile; ?>
-            <?php endif; ?>
+            <tr>
+                <td><strong>Laporan Simpanan per Periode</strong></td>
+                <td>Setoran, penarikan, dan saldo simpanan per anggota berdasarkan bulan/tahun</td>
+                <td>
+                    <a href="<?= url('pages/reports/savings.php') ?>" class="btn btn-sm btn-primary">Lihat</a>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Laporan Pinjaman Outstanding</strong></td>
+                <td>Sisa pokok dan bunga pinjaman per anggota (pinjaman belum lunas)</td>
+                <td>
+                    <a href="<?= url('pages/reports/loans.php') ?>" class="btn btn-sm btn-primary">Lihat</a>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Laporan Arus Kas</strong></td>
+                <td>Pemasukan (setoran + angsuran) vs pengeluaran (penarikan + pencairan) per bulan</td>
+                <td>
+                    <a href="<?= url('pages/reports/cashflow.php') ?>" class="btn btn-sm btn-primary">Lihat</a>
+                </td>
+            </tr>
         </tbody>
     </table>
 </div>

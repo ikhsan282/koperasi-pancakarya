@@ -1,0 +1,222 @@
+<?php
+require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../includes/auth.php';
+
+require_permission('loans.view');
+
+$id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+if ($id <= 0) {
+    flash('error', 'ID pinjaman tidak valid.');
+    redirect('pages/loans/index.php');
+}
+
+$stmt = db()->prepare('SELECT l.*, m.member_number, m.full_name, m.phone, m.address, lp.name AS product_name, u.full_name AS approver_name
+                       FROM loans l
+                       JOIN members m ON l.member_id = m.id
+                       LEFT JOIN loan_products lp ON l.loan_product_id = lp.id
+                       LEFT JOIN users u ON l.approved_by = u.id
+                       WHERE l.id = ?');
+$stmt->bind_param('i', $id);
+$stmt->execute();
+$loan = $stmt->get_result()->fetch_assoc();
+
+if (!$loan) {
+    flash('error', 'Data pinjaman tidak ditemukan.');
+    redirect('pages/loans/index.php');
+}
+
+$p_stmt = db()->prepare('SELECT * FROM loan_payments WHERE loan_id = ? ORDER BY payment_number ASC');
+$p_stmt->bind_param('i', $id);
+$p_stmt->execute();
+$payments = $p_stmt->get_result();
+
+$paid_count = 0;
+$total_paid = 0;
+$all_payments = [];
+while ($p = $payments->fetch_assoc()) {
+    $all_payments[] = $p;
+    if ($p['status'] === 'paid') {
+        $paid_count++;
+        $total_paid += (float) $p['amount_paid'];
+    }
+}
+
+$title = 'Detail Pinjaman - ' . $loan['loan_number'];
+require __DIR__ . '/../../includes/header.php';
+?>
+
+<div class="page-actions" style="margin-bottom: 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
+    <a href="<?= url('pages/loans/index.php') ?>" class="btn btn-secondary">Kembali ke Daftar</a>
+    <?php if (in_array($loan['status'], ['active', 'completed', 'paid'])): ?>
+        <a href="<?= url('pages/loans/print.php?id=' . $loan['id']) ?>" target="_blank" class="btn btn-primary">🖨 Cetak Kwitansi/Ringkasan</a>
+    <?php endif; ?>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color, #eee); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+        <h3 style="margin: 0;">Informasi Pinjaman: <?= e($loan['loan_number']) ?></h3>
+        <div>
+            <?php
+            $badge_classes = ['approved' => 'info', 'active' => 'primary', 'completed' => 'success', 'rejected' => 'danger'];
+            $status_labels = ['pending' => 'Menunggu Approval', 'approved' => 'Disetujui', 'active' => 'Aktif Berjalan', 'completed' => 'Lunas Selesai', 'rejected' => 'Ditolak'];
+            $badge_class = $badge_classes[$loan['status']] ?? 'warning';
+            $status_label = $status_labels[$loan['status']] ?? $loan['status'];
+            ?>
+            <span class="badge badge-<?= $badge_class ?>" style="font-size: 0.95rem; padding: 0.35rem 0.65rem;"><?= $status_label ?></span>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+        <div>
+            <h4 style="font-size: 1rem; color: #555; margin-bottom: 0.5rem;">Data Anggota</h4>
+            <table class="table-info" style="width: 100%;">
+                <tr><th style="width: 40%;">No. Anggota</th><td><?= e($loan['member_number']) ?></td></tr>
+                <tr><th>Nama Lengkap</th><td><strong><?= e($loan['full_name']) ?></strong></td></tr>
+                <tr><th>No. Telepon</th><td><?= e($loan['phone'] ?? '-') ?></td></tr>
+                <tr><th>Alamat</th><td><?= e($loan['address'] ?? '-') ?></td></tr>
+            </table>
+        </div>
+
+        <div>
+            <h4 style="font-size: 1rem; color: #555; margin-bottom: 0.5rem;">Detail Pinjaman</h4>
+            <table class="table-info" style="width: 100%;">
+                <tr><th style="width: 40%;">Produk</th><td><?= e($loan['product_name'] ?? 'Umum') ?></td></tr>
+                <tr><th>Pokok Pinjaman</th><td><strong><?= rupiah($loan['amount']) ?></strong></td></tr>
+                <tr><th>Bunga / Bulan</th><td><?= $loan['interest_rate'] ?>% (Flat)</td></tr>
+                <tr><th>Tenor</th><td><?= $loan['term_months'] ?> Bulan</td></tr>
+                <tr><th>Angsuran / Bulan</th><td><strong style="color: #2b6cb0;"><?= rupiah($loan['monthly_payment']) ?></strong></td></tr>
+            </table>
+        </div>
+
+        <div>
+            <h4 style="font-size: 1rem; color: #555; margin-bottom: 0.5rem;">Status & Progres</h4>
+            <table class="table-info" style="width: 100%;">
+                <tr><th style="width: 45%;">Tgl Pengajuan</th><td><?= date('d/m/Y', strtotime($loan['application_date'])) ?></td></tr>
+                <tr><th>Tgl Pencairan</th><td><?= $loan['disbursement_date'] ? date('d/m/Y', strtotime($loan['disbursement_date'])) : '-' ?></td></tr>
+                <tr><th>Disetujui Oleh</th><td><?= e($loan['approver_name'] ?? '-') ?></td></tr>
+                <tr><th>Total Terbayar</th><td><?= rupiah($total_paid) ?></td></tr>
+                <tr><th>Progres Angsuran</th><td><?= $paid_count ?> dari <?= count($all_payments) ?> cicilan</td></tr>
+                <?php if ($loan['rejection_notes']): ?>
+                    <tr><th>Catatan Penolakan</th><td style="color: #c53030;"><?= e($loan['rejection_notes']) ?></td></tr>
+                <?php endif; ?>
+            </table>
+        </div>
+    </div>
+</div>
+
+<?php if ($loan['status'] === 'pending' && can('loans.approve')): ?>
+    <div class="card" style="margin-bottom: 1.5rem; background: #faf5ff; border: 1px solid #d6bcfa;">
+        <h4 style="margin-top: 0; color: #553c9e;">Persetujuan / Penolakan Pinjaman</h4>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <form method="post" action="<?= url('pages/loans/process.php?id=' . $loan['id']) ?>" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                <input type="hidden" name="action" value="approve">
+                <button type="submit" class="btn btn-success" onclick="return confirm('Setujui pengajuan pinjaman ini?')">✓ Setujui Pinjaman</button>
+            </form>
+
+            <button type="button" class="btn btn-danger" onclick="document.getElementById('reject-form-box').style.display = document.getElementById('reject-form-box').style.display === 'none' ? 'block' : 'none';">✕ Tolak Pinjaman...</button>
+        </div>
+
+        <div id="reject-form-box" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #cbd5e0;">
+            <form method="post" action="<?= url('pages/loans/process.php?id=' . $loan['id']) ?>">
+                <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                <input type="hidden" name="action" value="reject">
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                    <label for="rejection_notes"><strong>Alasan Penolakan *</strong></label>
+                    <textarea id="rejection_notes" name="rejection_notes" rows="2" required placeholder="Tuliskan alasan penolakan pinjaman..." style="width: 100%; max-width: 600px; display: block;"></textarea>
+                </div>
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Yakin ingin menolak pinjaman ini?')">Kirim Penolakan</button>
+            </form>
+        </div>
+    </div>
+<?php endif; ?>
+
+<?php if ($loan['status'] === 'approved' && can('loans.approve')): ?>
+    <div class="card" style="margin-bottom: 1.5rem; background: #ebf8ff; border: 1px solid #bee3f8;">
+        <h4 style="margin-top: 0; color: #2b6cb0;">Pencairan Dana (Disbursement)</h4>
+        <p style="margin-bottom: 1rem; font-size: 0.95rem;">Pinjaman telah disetujui. Silakan tentukan tanggal pencairan dana untuk mengaktifkan pinjaman dan membuat jadwal cicilan.</p>
+        <form method="post" action="<?= url('pages/loans/process.php?id=' . $loan['id']) ?>" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+            <input type="hidden" name="action" value="disburse">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="disbursement_date" style="font-weight: 600;">Tanggal Pencairan *</label>
+                <input type="date" id="disbursement_date" name="disbursement_date" value="<?= date('Y-m-d') ?>" required style="padding: 0.4rem 0.6rem;">
+            </div>
+            <button type="submit" class="btn btn-primary" onclick="return confirm('Cairkan dana dan buat jadwal angsuran sekarang?')">Cairkan Dana & Buat Jadwal</button>
+        </form>
+    </div>
+<?php endif; ?>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0;">Jadwal Angsuran & Riwayat Pembayaran</h3>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th style="width: 60px;">Ke</th>
+                <th>Jatuh Tempo</th>
+                <th>Pokok</th>
+                <th>Bunga</th>
+                <th>Total Tagihan</th>
+                <th>Tgl Bayar</th>
+                <th>Jumlah Bayar</th>
+                <th>Status</th>
+                <?php if (can('loans.edit') && $loan['status'] === 'active'): ?>
+                    <th>Aksi</th>
+                <?php endif; ?>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (empty($all_payments)): ?>
+                <tr><td colspan="<?= (can('loans.edit') && $loan['status'] === 'active') ? 9 : 8 ?>" class="text-center">Jadwal angsuran akan digenerate otomatis setelah pinjaman dicairkan (status disburse).</td></tr>
+            <?php else: ?>
+                <?php foreach ($all_payments as $p): ?>
+                    <?php
+                    $is_overdue = ($p['status'] === 'pending' && !empty($p['due_date']) && strtotime($p['due_date']) < strtotime(date('Y-m-d')));
+                    $st = $is_overdue ? 'overdue' : $p['status'];
+                    $b_class = ['paid' => 'success', 'overdue' => 'danger'][$st] ?? 'warning';
+                    $l_label = ['paid' => 'Lunas', 'overdue' => 'Jatuh Tempo'][$st] ?? 'Belum Bayar';
+                    ?>
+                    <tr>
+                        <td style="font-weight: bold;"><?= $p['payment_number'] ?></td>
+                        <td><?= !empty($p['due_date']) ? date('d/m/Y', strtotime($p['due_date'])) : '-' ?></td>
+                        <td><?= rupiah($p['principal_amount']) ?></td>
+                        <td><?= rupiah($p['interest_amount']) ?></td>
+                        <td><strong><?= rupiah($p['amount_due'] > 0 ? $p['amount_due'] : $p['amount']) ?></strong></td>
+                        <td><?= !empty($p['payment_date']) ? date('d/m/Y', strtotime($p['payment_date'])) : '-' ?></td>
+                        <td><?= $p['amount_paid'] > 0 ? rupiah($p['amount_paid']) : ($p['status'] === 'paid' ? rupiah($p['amount']) : '-') ?></td>
+                        <td><span class="badge badge-<?= $b_class ?>"><?= $l_label ?></span></td>
+                        <?php if (can('loans.edit') && $loan['status'] === 'active'): ?>
+                            <td>
+                                <?php if ($p['status'] !== 'paid'): ?>
+                                    <a href="<?= url('pages/loans/payment.php?payment_id=' . $p['id']) ?>" class="btn btn-sm btn-primary">Bayar</a>
+                                <?php else: ?>
+                                    <span style="color: green; font-size: 0.85rem;">✓ Selesai</span>
+                                <?php endif; ?>
+                            </td>
+                        <?php endif; ?>
+                    </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </tbody>
+        <?php if (!empty($all_payments)): ?>
+            <tfoot>
+                <tr style="font-weight: bold; background: #f7fafc;">
+                    <td colspan="2">TOTAL</td>
+                    <td><?= rupiah(array_sum(array_column($all_payments, 'principal_amount'))) ?></td>
+                    <td><?= rupiah(array_sum(array_column($all_payments, 'interest_amount'))) ?></td>
+                    <td><?= rupiah(array_sum(array_map(fn($x) => $x['amount_due'] > 0 ? $x['amount_due'] : $x['amount'], $all_payments))) ?></td>
+                    <td></td>
+                    <td><?= rupiah($total_paid) ?></td>
+                    <td colspan="<?= (can('loans.edit') && $loan['status'] === 'active') ? 2 : 1 ?>"></td>
+                </tr>
+            </tfoot>
+        <?php endif; ?>
+    </table>
+</div>
+
+<?php require __DIR__ . '/../../includes/footer.php'; ?>
