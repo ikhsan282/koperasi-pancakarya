@@ -15,9 +15,9 @@ function calculate_flat_loan(float $principal, float $rate_monthly, int $months)
 
     $principal_monthly = round($principal / $months, 2);
     $interest_monthly = round($principal * ($rate_monthly / 100), 2);
-    $monthly_payment = $principal_monthly + $interest_monthly;
-    $total_interest = $interest_monthly * $months;
-    $total_payment = $principal + $total_interest;
+    $monthly_payment = round($principal_monthly + $interest_monthly, 2);
+    $total_interest = round($interest_monthly * $months, 2);
+    $total_payment = round($principal + $total_interest, 2);
 
     return [
         'principal_monthly' => $principal_monthly,
