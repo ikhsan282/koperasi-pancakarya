@@ -96,6 +96,7 @@ require __DIR__ . '/../../includes/header.php';
                     <tr>
                         <th colspan="3">
                             <?= e($g['member_number']) ?> — <?= e($g['full_name']) ?>
+                            <a href="<?= url('pages/savings/book.php?member_id=' . $mid) ?>" class="btn btn-sm btn-text" target="_blank">📖 Cetak Buku</a>
                             <?php if (can('savings.create')): ?>
                                 <a href="<?= url('pages/savings/form.php?member_id=' . $mid) ?>" class="btn btn-sm btn-text">+ Setoran</a>
                             <?php endif; ?>

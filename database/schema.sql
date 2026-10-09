@@ -47,6 +47,7 @@ INSERT INTO `permissions` (`name`, `description`, `module`) VALUES
 ('loans.edit', 'Edit pinjaman', 'loans'),
 ('loans.delete', 'Hapus pinjaman', 'loans'),
 ('loans.approve', 'Setujui pinjaman', 'loans'),
+('loans.send_reminder', 'Kirim pengingat jatuh tempo', 'loans'),
 ('reports.view', 'Lihat laporan', 'reports'),
 ('reports.export', 'Ekspor laporan', 'reports'),
 ('users.manage', 'Kelola pengguna', 'users');
@@ -260,6 +261,21 @@ CREATE TABLE `activity_logs` (
   KEY `user_id` (`user_id`),
   KEY `created_at` (`created_at`),
   CONSTRAINT `activity_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Email logs for deduplication
+CREATE TABLE `email_logs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `email_type` varchar(50) NOT NULL,
+  `reference_id` int(11) NOT NULL COMMENT 'FK to payment/loan/member depending on type',
+  `recipient` varchar(255) NOT NULL,
+  `subject` varchar(255) NOT NULL,
+  `status` enum('sent','failed') NOT NULL,
+  `error_message` text,
+  `sent_date` date NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email_type_reference_date` (`email_type`, `reference_id`, `sent_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 COMMIT;

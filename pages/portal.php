@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
-require_once __DIR__ . '/../../config/config.php';
-require_once __DIR__ . '/../../config/database.php';
-require_once __DIR__ . '/../../includes/functions.php';
-require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/auth.php';
 
 require_login();
 
@@ -340,6 +340,9 @@ foreach ($all_loans as $loan) {
             <!-- TAB SIMPANAN -->
             <div class="tab-pane" id="tab-simpanan">
                 <h6 class="mb-3">Rekening Simpanan</h6>
+                <a href="<?= url('pages/savings/book.php?member_id=' . $member_id) ?>" class="btn btn-primary btn-sm mb-3" target="_blank">
+                    <i class="bi bi-printer"></i> Cetak Buku Tabungan
+                </a>
                 <?php if (empty($savings_accounts)): ?>
                 <p class="text-muted">Belum ada rekening simpanan.</p>
                 <?php else: ?>
@@ -387,7 +390,10 @@ foreach ($all_loans as $loan) {
 
             <!-- TAB PINJAMAN -->
             <div class="tab-pane" id="tab-pinjaman">
-                <h6 class="mb-3">Daftar Pinjaman</h6>
+                <div class="page-actions">
+            <a href="<?= url('pages/loans/simulator.php') ?>" class="btn btn-primary"><i class="bi bi-calculator"></i> Simulasikan Pinjaman</a>
+        </div>
+        <h6 class="mb-3">Daftar Pinjaman</h6>
                 <?php if (empty($all_loans)): ?>
                 <p class="text-muted">Belum ada pinjaman.</p>
                 <?php else: ?>

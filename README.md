@@ -7,6 +7,9 @@ Sistem Manajemen Koperasi - PHP Native dengan MySQLi
 - **Manajemen Anggota**: Pendaftaran, profil, status keanggotaan
 - **Simpanan**: Simpanan Pokok, Wajib, dan Sukarela dengan transaksi setoran/penarikan
 - **Pinjaman**: Pengajuan, persetujuan, pencairan, dan cicilan pinjaman
+- **Simulasi Pinjaman**: Kalkulator angsuran untuk anggota sebelum mengajukan
+- **Buku Tabungan**: Cetak mutasi lengkap per anggota dengan saldo berjalan
+- **Pengingat Jatuh Tempo**: Kirim email pengingat angsuran dengan dedup harian
 - **Laporan**: Dashboard statistik dan log aktivitas
 - **Role-Based Access Control**: Super Admin, Admin, Bendahara, Anggota
 - **Activity Logging**: Audit trail lengkap
@@ -56,6 +59,7 @@ const DB_HOST = 'localhost';
 const DB_NAME = 'koperasi_pancakarya';
 const DB_USER = 'root';
 const DB_PASS = '';
+const MAIL_FROM = 'noreply@domain-koperasi-anda';
 ```
 
 ### 4. Set Permissions
@@ -121,12 +125,12 @@ koperasi-pancakarya/
 
 ## Development
 
-Database memiliki **11 tabel**:
+Database memiliki **13 tabel**:
 - roles, permissions, role_permissions
 - users, members
 - savings_types, savings_accounts, savings_transactions
-- loans, loan_payments
-- activity_logs
+- loan_products, loans, loan_payments
+- activity_logs, email_logs
 
 ## License
 

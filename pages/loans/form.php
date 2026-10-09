@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/loan_tools.php';
 
 require_permission('loans.create');
 
@@ -44,15 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$product) {
         $errors[] = 'Produk pinjaman tidak valid atau sudah tidak aktif.';
     } else {
-        if ($amount < (float) $product['min_amount']) {
-            $errors[] = 'Jumlah pinjaman minimal ' . rupiah($product['min_amount']) . '.';
-        }
-        if ($amount > (float) $product['max_amount']) {
-            $errors[] = 'Jumlah pinjaman maksimal ' . rupiah($product['max_amount']) . '.';
-        }
-        if ($term_months <= 0 || $term_months > (int) $product['max_tenor_months']) {
-            $errors[] = 'Tenor harus antara 1 sampai ' . $product['max_tenor_months'] . ' bulan.';
-        }
+        $errors = array_merge($errors, validate_loan_simulation($product, $amount, $term_months));
     }
 
     if ($amount <= 0) $errors[] = 'Jumlah pinjaman harus lebih dari nol.';
@@ -60,9 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($errors)) {
         $interest_rate = (float) $product['interest_rate'];
-        $principal_per_month = $amount / $term_months;
-        $interest_per_month = $amount * ($interest_rate / 100);
-        $monthly_payment = round($principal_per_month + $interest_per_month, 2);
+        $calculation = calculate_flat_loan($amount, $interest_rate, $term_months);
+        $monthly_payment = $calculation['monthly_payment'];
 
         $prefix = 'L-' . date('Ym') . '-';
         $stmt = db()->prepare('SELECT COUNT(*) AS total FROM loans WHERE loan_number LIKE ?');

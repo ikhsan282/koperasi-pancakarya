@@ -59,7 +59,8 @@ require __DIR__ . '/../../includes/header.php';
             <h3>Informasi Rekening</h3>
         </div>
         <div>
-            <a href="<?= url('pages/savings/print.php?id=' . $account_id) ?>" class="btn btn-secondary" target="_blank">🖨 Cetak Mutasi</a>
+            <a href="<?= url('pages/savings/book.php?member_id=' . $account['member_id']) ?>" class="btn btn-secondary" target="_blank">📖 Buku Tabungan</a>
+            <a href="<?= url('pages/savings/print.php?account_id=' . $account_id) ?>" class="btn btn-secondary" target="_blank">🖨 Cetak Mutasi</a>
             <?php if (can('savings.create')): ?>
                 <a href="<?= url('pages/savings/form.php?account_id=' . $account_id) ?>" class="btn btn-primary">+ Transaksi Baru</a>
             <?php endif; ?>
