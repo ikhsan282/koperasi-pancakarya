@@ -19,6 +19,7 @@ $params = [];
 $types = '';
 
 if ($search !== '') {
+    $search = addcslashes($search, '%_\\');
     $sql .= ' AND (m.member_number LIKE ? OR m.full_name LIKE ? OR l.loan_number LIKE ?)';
     $searchTerm = "%{$search}%";
     $params[] = $searchTerm;

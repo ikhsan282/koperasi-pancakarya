@@ -10,6 +10,7 @@ if (!empty($_SESSION['user_id'])) {
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
@@ -45,9 +46,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $permissions = [];
             while ($perm = $perms->fetch_assoc()) {
                 $permissions[] = $perm['name'];
-            }
+                }
 
-            $_SESSION['user_id'] = $user['id'];
+                session_regenerate_id(true);
+                $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['full_name'];
             $_SESSION['role'] = $user['role_name'];
             $_SESSION['permissions'] = $permissions;
@@ -96,9 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">Masuk</button>
             </form>
-            <div class="auth-footer">
-                <small>Default: admin / Admin@123</small>
-            </div>
         </div>
     </div>
 </body>

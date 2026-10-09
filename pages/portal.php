@@ -9,13 +9,18 @@ require_login();
 
 // Role check: only Anggota can access portal
 $user = current_user();
+$user_id = (int)($user['id'] ?? 0);
+if ($user_id <= 0) {
+    http_response_code(403);
+    exit('Session tidak valid.');
+}
 if ($user['role'] !== 'Anggota') {
     redirect('pages/dashboard/index.php');
 }
 
 // Get member linked to this user
 $stmt = db()->prepare("SELECT * FROM members WHERE user_id = ? AND status = 'active' LIMIT 1");
-$stmt->bind_param('i', $user['id']);
+$stmt->bind_param('i', $user_id);
 $stmt->execute();
 $member = $stmt->get_result()->fetch_assoc();
 
