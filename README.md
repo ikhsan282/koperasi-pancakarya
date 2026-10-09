@@ -1,0 +1,133 @@
+# Koperasi Pancakarya
+
+Sistem Manajemen Koperasi - PHP Native dengan MySQLi
+
+## Fitur
+
+- **Manajemen Anggota**: Pendaftaran, profil, status keanggotaan
+- **Simpanan**: Simpanan Pokok, Wajib, dan Sukarela dengan transaksi setoran/penarikan
+- **Pinjaman**: Pengajuan, persetujuan, pencairan, dan cicilan pinjaman
+- **Laporan**: Dashboard statistik dan log aktivitas
+- **Role-Based Access Control**: Super Admin, Admin, Bendahara, Anggota
+- **Activity Logging**: Audit trail lengkap
+
+## Teknologi
+
+- PHP 7.4+
+- MySQL 5.7+ / MariaDB 10.3+
+- MySQLi (prepared statements)
+- Bootstrap-inspired CSS
+- Vanilla JavaScript
+
+## Instalasi
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/ikhsan282/koperasi-pancakarya.git
+cd koperasi-pancakarya
+```
+
+### 2. Konfigurasi Database
+
+Buat database MySQL:
+
+```sql
+CREATE DATABASE koperasi_pancakarya CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+Import schema:
+
+```bash
+mysql -u root -p koperasi_pancakarya < database/schema.sql
+```
+
+### 3. Konfigurasi Aplikasi
+
+Edit `config/config.php` sesuai environment Anda:
+
+```php
+const APP_URL = 'http://localhost/koperasi-pancakarya';
+const DB_HOST = 'localhost';
+const DB_NAME = 'koperasi_pancakarya';
+const DB_USER = 'root';
+const DB_PASS = '';
+```
+
+### 4. Set Permissions
+
+```bash
+chmod -R 755 uploads/
+```
+
+### 5. Akses Aplikasi
+
+Buka browser: `http://localhost/koperasi-pancakarya`
+
+**Login Default:**
+- Username: `admin`
+- Password: `Admin@123`
+
+## Struktur Direktori
+
+```
+koperasi-pancakarya/
+├── config/
+│   ├── config.php          # Konfigurasi utama
+│   └── database.php        # Koneksi database
+├── includes/
+│   ├── auth.php           # Autentikasi & otorisasi
+│   ├── functions.php      # Helper functions
+│   ├── header.php         # Template header
+│   └── footer.php         # Template footer
+├── pages/
+│   ├── auth/              # Login, logout
+│   ├── dashboard/         # Dashboard utama
+│   ├── members/           # CRUD anggota
+│   ├── savings/           # Simpanan & transaksi
+│   ├── loans/             # Pinjaman & cicilan
+│   └── reports/           # Laporan
+├── public/
+│   ├── css/              # Stylesheet
+│   └── js/               # JavaScript
+├── database/
+│   └── schema.sql        # Database schema
+├── uploads/              # File uploads (protected)
+└── index.php             # Entry point
+```
+
+## Role & Permissions
+
+| Role | Permissions |
+|------|------------|
+| **Super Admin** | Akses penuh semua fitur |
+| **Admin** | Manajemen anggota, simpanan, pinjaman |
+| **Bendahara** | View semua data, laporan, reports |
+| **Anggota** | View data sendiri saja |
+
+## Keamanan
+
+- ✅ Prepared statements (SQL injection protection)
+- ✅ CSRF tokens
+- ✅ Password hashing (bcrypt)
+- ✅ Session security (httponly, samesite)
+- ✅ Upload directory protection (.htaccess)
+- ✅ Role-based access control
+- ✅ Activity logging
+
+## Development
+
+Database memiliki **11 tabel**:
+- roles, permissions, role_permissions
+- users, members
+- savings_types, savings_accounts, savings_transactions
+- loans, loan_payments
+- activity_logs
+
+## License
+
+MIT License - bebas digunakan untuk keperluan komersial dan non-komersial.
+
+## Support
+
+Untuk pertanyaan dan dukungan, buka issue di GitHub repository.

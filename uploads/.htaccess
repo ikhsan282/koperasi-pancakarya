@@ -1,0 +1,26 @@
+# Disable directory listing
+Options -Indexes
+
+# Disable script execution
+<IfModule mod_php7.c>
+php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+php_flag engine off
+</IfModule>
+SetHandler default-handler
+
+# Default deny
+<IfModule mod_authz_core.c>
+Require all denied
+</IfModule>
+Order deny,allow
+Deny from all
+
+# Whitelist allowed file types
+<FilesMatch "\.(jpe?g|png|webp|pdf)$">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    Allow from all
+</FilesMatch>

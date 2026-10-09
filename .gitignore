@@ -1,0 +1,18 @@
+# Uploaded files
+uploads/*
+!uploads/.gitkeep
+!uploads/**/.htaccess
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Config (optional, uncomment if needed)
+# config/config.php
