@@ -29,7 +29,7 @@ $title = $title ?? APP_NAME;
             <?php if (can('reports.view')): ?><a href="<?= url('pages/reports/index.php') ?>">▤ Laporan</a><?php endif; ?>
             <?php if (can('shu.view')): ?><a href="<?= url('pages/shu/index.php') ?>">% SHU</a><?php endif; ?>
         </nav>
-        <div class="sidebar-user"><small>Masuk sebagai</small><strong><?= e(current_user()['name']) ?></strong><a href="<?= url('pages/auth/logout.php') ?>">Keluar</a></div>
+        <div class="sidebar-user"><small>Masuk sebagai</small><strong><?= e(current_user()['name']) ?></strong><form method="POST" action="<?= url('pages/auth/logout.php') ?>" style="display:inline;margin:0"><input type="hidden" name="csrf_token" value="<?= csrf_token() ?>"><button type="submit" style="border:0;background:none;color:inherit;text-decoration:underline;cursor:pointer;padding:0;font:inherit">Keluar</button></form></div>
     </aside>
     <main>
         <header class="topbar">
