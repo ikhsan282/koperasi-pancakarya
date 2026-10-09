@@ -96,7 +96,7 @@ require __DIR__ . '/../../includes/header.php';
 
         <div class="form-group">
             <label for="member_id">Pilih Anggota *</label>
-            <select id="member_id" name="member_id" required>
+            <select id="member_id" name="member_id" class="ts-select" required>
                 <option value="">-- Pilih Anggota --</option>
                 <?php while ($m = $members->fetch_assoc()): ?>
                     <option value="<?= $m['id'] ?>" <?= (int)($_POST['member_id'] ?? 0) === (int)$m['id'] ? 'selected' : '' ?>>
@@ -108,7 +108,7 @@ require __DIR__ . '/../../includes/header.php';
 
         <div class="form-group">
             <label for="loan_product_id">Produk Pinjaman *</label>
-            <select id="loan_product_id" name="loan_product_id" required>
+            <select id="loan_product_id" name="loan_product_id" class="ts-select" required>
                 <option value="">-- Pilih Produk Pinjaman --</option>
                 <?php foreach ($products as $p): ?>
                     <option value="<?= $p['id'] ?>"

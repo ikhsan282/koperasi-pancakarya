@@ -65,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="theme-color" content="#667eea">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
     <script>
     (function(){try{var t=localStorage.getItem('pancakarya_theme');if(!t)t=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';document.documentElement.setAttribute('data-bs-theme',t);}catch(e){}})();
     </script>
@@ -145,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <form method="post">
                 <div class="mb-3">
                     <label class="form-label">Produk Pinjaman</label>
-                    <select name="loan_product_id" class="form-select" required>
+                    <select name="loan_product_id" class="form-select ts-select" required>
                         <option value="">-- Pilih Produk --</option>
                         <?php foreach ($products as $p): ?>
                         <option value="<?= $p['id'] ?>" <?= ($selected_product && $selected_product['id'] === $p['id']) ? 'selected' : '' ?>>
@@ -222,5 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <?php endif; ?>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <script>document.querySelectorAll('.ts-select').forEach(el => new TomSelect(el));</script>
 </body>
 </html>

@@ -176,7 +176,7 @@ require __DIR__ . '/../../includes/header.php';
         <div class="form-row">
             <div class="form-group">
                 <label for="member_id">Anggota *</label>
-                <select id="member_id" name="member_id" required>
+                <select id="member_id" name="member_id" class="ts-select" required>
                     <option value="">-- Pilih Anggota --</option>
                     <?php while ($m = $members->fetch_assoc()): ?>
                         <option value="<?= $m['id'] ?>" <?= (old('member_id') ?: $preselect_member) == $m['id'] ? 'selected' : '' ?>>
@@ -187,7 +187,7 @@ require __DIR__ . '/../../includes/header.php';
             </div>
             <div class="form-group">
                 <label for="savings_type_id">Jenis Simpanan *</label>
-                <select id="savings_type_id" name="savings_type_id" required>
+                <select id="savings_type_id" name="savings_type_id" class="ts-select" required>
                     <option value="">-- Pilih Jenis --</option>
                     <?php while ($t = $savings_types->fetch_assoc()): ?>
                         <option value="<?= $t['id'] ?>" <?= old('savings_type_id') == $t['id'] ? 'selected' : '' ?>><?= e($t['name']) ?></option>

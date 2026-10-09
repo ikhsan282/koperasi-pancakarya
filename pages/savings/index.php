@@ -65,7 +65,7 @@ require __DIR__ . '/../../includes/header.php';
 
 <div class="page-actions">
     <form method="get" class="search-form">
-        <select name="member_id">
+        <select name="member_id" class="ts-select">
             <option value="">-- Semua Anggota --</option>
             <?php while ($m = $members->fetch_assoc()): ?>
                 <option value="<?= $m['id'] ?>" <?= $member_id === (int)$m['id'] ? 'selected' : '' ?>>
