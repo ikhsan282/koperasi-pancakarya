@@ -100,7 +100,7 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `users` (`username`, `email`, `password`, `full_name`, `role_id`) VALUES
-('admin', 'admin@koperasi.test', '$2y$12$KdXg51w12xzM8xYaKotYnudlVD6hiaq6OJUVOkwguibpqbh8auhfO', 'Administrator', 1);
+('admin', 'admin@koperasi.test', '$2y$12$oucBlvl6RGkxgjQ0iAF2IehCiJI2tn9epJCvpnW/A0BBFcRKnbTfu', 'Administrator', 1);
 
 -- Members table
 CREATE TABLE `members` (

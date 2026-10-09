@@ -57,6 +57,36 @@ if (($_GET['format'] ?? '') === 'pdf') {
     $pdf->download('Laporan Outstanding Pinjaman ' . date('d_m_Y') . '.pdf');
 }
 
+if (($_GET['format'] ?? '') === 'xlsx') {
+    require_permission('reports.export');
+    require_once __DIR__ . '/../../includes/xlsx.php';
+    $headers = ['No. Anggota', 'Nama', 'No. Pinjaman', 'Tgl Pengajuan', 'Status', 'Sisa Pokok', 'Sisa Bunga', 'Total Outstanding'];
+    $data = [];
+    foreach ($rows as $row) {
+        $data[] = [
+            $row['member_number'],
+            $row['full_name'],
+            $row['loan_number'],
+            $row['application_date'] ? date('d/m/Y', strtotime($row['application_date'])) : '-',
+            $row['status'] === 'active' ? 'Aktif' : 'Disetujui',
+            (float) $row['principal_remaining'],
+            (float) $row['interest_remaining'],
+            (float) $row['outstanding'],
+        ];
+    }
+    $data[] = [
+        'TOTAL',
+        '',
+        '',
+        '',
+        '',
+        (float) $principal_total,
+        (float) $interest_total,
+        (float) ($principal_total + $interest_total),
+    ];
+    xlsx_export('Laporan_Pinjaman_Outstanding_' . date('Y-m-d') . '.xlsx', $headers, $data, 'Laporan Outstanding Pinjaman');
+}
+
 require __DIR__ . '/../../includes/header.php';
 ?>
 
@@ -64,6 +94,7 @@ require __DIR__ . '/../../includes/header.php';
     <div><strong><?= count($rows) ?></strong> pinjaman belum lunas</div>
     <?php if (can('reports.export')): ?>
         <a href="<?= url('pages/reports/loans_export.php') ?>" class="btn btn-success">Export CSV</a>
+        <a href="<?= url('pages/reports/loans.php?format=xlsx') ?>" class="btn btn-success">Export Excel</a>
         <a href="<?= url('pages/reports/loans.php?format=pdf') ?>" class="btn btn-success">Export PDF</a>
     <?php endif; ?>
 </div>

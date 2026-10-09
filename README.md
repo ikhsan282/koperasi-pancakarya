@@ -75,7 +75,7 @@ Buka browser: `http://localhost/koperasi-pancakarya`
 
 **Login Default:**
 - Username: `admin`
-- Password: `Admin@123`
+- Password: `P@ssw0rd`
 
 ## Struktur Direktori
 
