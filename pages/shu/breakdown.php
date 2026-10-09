@@ -72,6 +72,30 @@ $totals = [
 ];
 $is_draft = ($period['status'] ?? '') !== 'finalized';
 
+// PDF only for finalized periods: the draft depends on POSTed adjustments a GET link cannot carry.
+if ($id > 0 && ($_GET['format'] ?? '') === 'pdf') {
+    require_permission('reports.export');
+    require_once __DIR__ . '/../../includes/pdf.php';
+    $pdf = new SimplePDF('Rincian SHU ' . $period['fiscal_year'], APP_NAME, true);
+    $pdf->heading('Rincian SHU ' . $period['fiscal_year'], 1);
+    $pdf->text('Total SHU: ' . rupiah($period['total_shu']) . ' | Jasa modal: ' . $period['pct_jasa_modal'] . '%', 10);
+    $pdf->ln(4);
+    $tbl = [];
+    foreach ($rows as $r) {
+        $tbl[] = [
+            $r['member_number'], $r['full_name'], rupiah($r['savings_base']), rupiah($r['loan_base']),
+            rupiah($r['jasa_modal']), rupiah($r['jasa_anggota']), rupiah($r['adjustment']), rupiah($r['total_shu']),
+        ];
+    }
+    $tbl[] = ['Total', '', rupiah($totals['savings_base']), rupiah($totals['loan_base']), rupiah($totals['jasa_modal']),
+        rupiah($totals['jasa_anggota']), rupiah($totals['adjustment']), rupiah($totals['total_shu'])];
+    $pdf->table(
+        ['No. Anggota', 'Nama', 'Dasar Simpanan', 'Dasar Pinjaman', 'Jasa Modal', 'Jasa Anggota', 'Penyesuaian', 'Total SHU'],
+        $tbl
+    );
+    $pdf->download('Rincian SHU ' . $period['fiscal_year'] . '.pdf');
+}
+
 require __DIR__ . '/../../includes/header.php';
 ?>
 
@@ -79,6 +103,9 @@ require __DIR__ . '/../../includes/header.php';
 
 <div class="page-actions">
     <a href="<?= url('pages/shu/index.php') ?>" class="btn btn-secondary">Kembali ke SHU</a>
+    <?php if ($id > 0 && can('reports.export')): ?>
+        <a href="<?= url('pages/shu/breakdown.php?id=' . $id . '&format=pdf') ?>" class="btn btn-success">Export PDF</a>
+    <?php endif; ?>
 </div>
 
 <div class="report-summary">

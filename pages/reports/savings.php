@@ -38,6 +38,31 @@ $totals = [
     'balance' => array_sum(array_column($rows, 'current_balance')),
 ];
 
+if (($_GET['format'] ?? '') === 'pdf') {
+    require_permission('reports.export');
+    require_once __DIR__ . '/../../includes/pdf.php';
+    $pdf = new SimplePDF("Laporan Simpanan {$months[$month]} {$year}", APP_NAME, true);
+    $pdf->heading("Laporan Simpanan {$months[$month]} {$year}", 1);
+    $pdf->ln(4);
+    $tbl = [];
+    foreach ($rows as $row) {
+        $tbl[] = [
+            $row['member_number'],
+            $row['full_name'],
+            rupiah($row['deposit_total']),
+            rupiah($row['withdrawal_total']),
+            rupiah($row['net_total']),
+            rupiah($row['current_balance']),
+        ];
+    }
+    $tbl[] = ['Total', '', rupiah($totals['deposit']), rupiah($totals['withdrawal']), rupiah($totals['net']), rupiah($totals['balance'])];
+    $pdf->table(
+        ['No. Anggota', 'Nama', 'Setoran', 'Penarikan', 'Setoran Bersih', 'Saldo Saat Ini'],
+        $tbl
+    );
+    $pdf->download("Laporan Simpanan {$months[$month]} {$year}.pdf");
+}
+
 require __DIR__ . '/../../includes/header.php';
 ?>
 
@@ -53,6 +78,7 @@ require __DIR__ . '/../../includes/header.php';
     </form>
     <?php if (can('reports.export')): ?>
         <a href="<?= url('pages/reports/savings_export.php?month=' . $month . '&year=' . $year) ?>" class="btn btn-success">Export CSV</a>
+        <a href="<?= url('pages/reports/savings.php?month=' . $month . '&year=' . $year . '&format=pdf') ?>" class="btn btn-success">Export PDF</a>
     <?php endif; ?>
 </div>
 

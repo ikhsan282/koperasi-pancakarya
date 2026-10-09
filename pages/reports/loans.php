@@ -30,6 +30,33 @@ while ($row = $res->fetch_assoc()) {
 $principal_total = array_sum(array_column($rows, 'principal_remaining'));
 $interest_total = array_sum(array_column($rows, 'interest_remaining'));
 
+if (($_GET['format'] ?? '') === 'pdf') {
+    require_permission('reports.export');
+    require_once __DIR__ . '/../../includes/pdf.php';
+    $pdf = new SimplePDF('Laporan Outstanding Pinjaman', APP_NAME, true);
+    $pdf->heading('Laporan Outstanding Pinjaman', 1);
+    $pdf->text('Per ' . date('d/m/Y'), 10);
+    $pdf->ln(4);
+    $tbl = [];
+    foreach ($rows as $row) {
+        $tbl[] = [
+            $row['member_number'],
+            $row['full_name'],
+            $row['loan_number'],
+            $row['status'] === 'active' ? 'Aktif' : 'Disetujui',
+            rupiah($row['principal_remaining']),
+            rupiah($row['interest_remaining']),
+            rupiah($row['outstanding']),
+        ];
+    }
+    $tbl[] = ['Total', '', '', '', rupiah($principal_total), rupiah($interest_total), rupiah($principal_total + $interest_total)];
+    $pdf->table(
+        ['No. Anggota', 'Nama', 'No. Pinjaman', 'Status', 'Sisa Pokok', 'Sisa Bunga', 'Total Outstanding'],
+        $tbl
+    );
+    $pdf->download('Laporan Outstanding Pinjaman ' . date('d_m_Y') . '.pdf');
+}
+
 require __DIR__ . '/../../includes/header.php';
 ?>
 
@@ -37,6 +64,7 @@ require __DIR__ . '/../../includes/header.php';
     <div><strong><?= count($rows) ?></strong> pinjaman belum lunas</div>
     <?php if (can('reports.export')): ?>
         <a href="<?= url('pages/reports/loans_export.php') ?>" class="btn btn-success">Export CSV</a>
+        <a href="<?= url('pages/reports/loans.php?format=pdf') ?>" class="btn btn-success">Export PDF</a>
     <?php endif; ?>
 </div>
 
