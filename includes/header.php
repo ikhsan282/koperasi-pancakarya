@@ -26,6 +26,7 @@ $title = $title ?? APP_NAME;
             <?php if (can('loans.view')): ?><a href="<?= url('pages/loans/index.php') ?>">◇ Pinjaman</a><?php endif; ?>
             <?php if (can('loans.send_reminder')): ?><a href="<?= url('pages/loans/reminders.php') ?>">📧 Pengingat</a><?php endif; ?>
             <?php if (can('reports.view')): ?><a href="<?= url('pages/reports/index.php') ?>">▤ Laporan</a><?php endif; ?>
+            <?php if (can('shu.view')): ?><a href="<?= url('pages/shu/index.php') ?>">% SHU</a><?php endif; ?>
         </nav>
         <div class="sidebar-user"><small>Masuk sebagai</small><strong><?= e(current_user()['name']) ?></strong><a href="<?= url('pages/auth/logout.php') ?>">Keluar</a></div>
     </aside>

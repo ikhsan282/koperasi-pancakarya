@@ -50,6 +50,8 @@ INSERT INTO `permissions` (`name`, `description`, `module`) VALUES
 ('loans.send_reminder', 'Kirim pengingat jatuh tempo', 'loans'),
 ('reports.view', 'Lihat laporan', 'reports'),
 ('reports.export', 'Ekspor laporan', 'reports'),
+('shu.view', 'Lihat SHU', 'shu'),
+('shu.manage', 'Kelola distribusi SHU', 'shu'),
 ('users.manage', 'Kelola pengguna', 'users');
 
 -- Role permissions junction
@@ -74,9 +76,9 @@ SELECT 2, `id` FROM `permissions` WHERE `name` != 'users.manage';
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT 3, `id` FROM `permissions` WHERE `name` LIKE '%.view' OR `name` LIKE 'reports.%';
 
--- Anggota gets only view permissions
+-- Anggota gets only view permissions (SHU excluded: its pages list every member's data)
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
-SELECT 4, `id` FROM `permissions` WHERE `name` LIKE '%.view';
+SELECT 4, `id` FROM `permissions` WHERE `name` LIKE '%.view' AND `module` != 'shu';
 
 -- Users table
 CREATE TABLE `users` (
@@ -276,6 +278,42 @@ CREATE TABLE `email_logs` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email_type_reference_date` (`email_type`, `reference_id`, `sent_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- SHU periods
+CREATE TABLE `shu_periods` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `fiscal_year` int(11) NOT NULL,
+  `total_shu` decimal(15,2) NOT NULL,
+  `pct_jasa_modal` int(11) NOT NULL COMMENT 'Percentage to jasa modal (0-100)',
+  `status` enum('draft','finalized') NOT NULL DEFAULT 'draft',
+  `finalized_at` timestamp NULL DEFAULT NULL,
+  `finalized_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `fiscal_year` (`fiscal_year`),
+  KEY `finalized_by` (`finalized_by`),
+  CONSTRAINT `shu_periods_ibfk_1` FOREIGN KEY (`finalized_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- SHU distributions
+CREATE TABLE `shu_distributions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `period_id` int(11) NOT NULL,
+  `member_id` int(11) NOT NULL,
+  `savings_base` decimal(15,2) NOT NULL COMMENT 'Savings balance used for calculation',
+  `loan_base` decimal(15,2) NOT NULL COMMENT 'Loan interest paid used for calculation',
+  `jasa_modal` decimal(15,2) NOT NULL,
+  `jasa_anggota` decimal(15,2) NOT NULL,
+  `adjustment` decimal(15,2) NOT NULL DEFAULT 0.00 COMMENT 'Penyesuaian manual admin (total nol per periode)',
+  `total_shu` decimal(15,2) NOT NULL COMMENT 'jasa_modal + jasa_anggota + adjustment',
+  `notes` text,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `period_member` (`period_id`, `member_id`),
+  KEY `member_id` (`member_id`),
+  CONSTRAINT `shu_distributions_ibfk_1` FOREIGN KEY (`period_id`) REFERENCES `shu_periods` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `shu_distributions_ibfk_2` FOREIGN KEY (`member_id`) REFERENCES `members` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 COMMIT;

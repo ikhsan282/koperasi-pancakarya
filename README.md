@@ -10,6 +10,7 @@ Sistem Manajemen Koperasi - PHP Native dengan MySQLi
 - **Simulasi Pinjaman**: Kalkulator angsuran untuk anggota sebelum mengajukan
 - **Buku Tabungan**: Cetak mutasi lengkap per anggota dengan saldo berjalan
 - **Pengingat Jatuh Tempo**: Kirim email pengingat angsuran dengan dedup harian
+- **Distribusi SHU**: Hitung jasa modal dari saldo simpanan dan jasa anggota dari bunga pinjaman dibayar, sesuaikan per anggota, lalu finalisasi per tahun
 - **Laporan**: Dashboard statistik dan log aktivitas
 - **Role-Based Access Control**: Super Admin, Admin, Bendahara, Anggota
 - **Activity Logging**: Audit trail lengkap
@@ -94,6 +95,7 @@ koperasi-pancakarya/
 │   ├── members/           # CRUD anggota
 │   ├── savings/           # Simpanan & transaksi
 │   ├── loans/             # Pinjaman & cicilan
+│   ├── shu/               # Distribusi SHU tahunan
 │   └── reports/           # Laporan
 ├── public/
 │   ├── css/              # Stylesheet
@@ -125,12 +127,13 @@ koperasi-pancakarya/
 
 ## Development
 
-Database memiliki **13 tabel**:
+Database memiliki **15 tabel**:
 - roles, permissions, role_permissions
 - users, members
 - savings_types, savings_accounts, savings_transactions
 - loan_products, loans, loan_payments
 - activity_logs, email_logs
+- shu_periods, shu_distributions
 
 ## License
 
