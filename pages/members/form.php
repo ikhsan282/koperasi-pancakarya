@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/sequences.php';
 
 $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $is_edit = $id > 0;
@@ -57,14 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('success', 'Data anggota berhasil diperbarui.');
             redirect('pages/members/index.php');
         } else {
-            // Generate member number: KP-YYYYMM-XXXX
-            $prefix = 'KP-' . date('Ym') . '-';
-            $stmt = db()->prepare('SELECT COUNT(*) AS total FROM members WHERE member_number LIKE ?');
-            $likePrefix = $prefix . '%';
-            $stmt->bind_param('s', $likePrefix);
-            $stmt->execute();
-            $count = $stmt->get_result()->fetch_assoc()['total'] + 1;
-            $member_number = $prefix . str_pad((string)$count, 4, '0', STR_PAD_LEFT);
+            // Generate member number atomically
+            $member_number = generate_member_number();
 
             $stmt = db()->prepare('INSERT INTO members (member_number, full_name, id_number, phone, email, address, join_date, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
             $stmt->bind_param('ssssssss', $member_number, $full_name, $id_number, $phone, $email, $address, $join_date, $status);

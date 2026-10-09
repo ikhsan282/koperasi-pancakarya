@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/sequences.php';
 
 require_permission('savings.create');
 
@@ -76,20 +77,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($existing) {
                     $acc_id = (int) $existing['id'];
                 } else {
-                    $stmt = db()->prepare('SELECT m.member_number, st.name FROM members m, savings_types st WHERE m.id = ? AND st.id = ?');
-                    $stmt->bind_param('ii', $member_id, $savings_type_id);
+                    $stmt = db()->prepare('SELECT m.member_number FROM members m WHERE m.id = ?');
+                    $stmt->bind_param('i', $member_id);
                     $stmt->execute();
                     $meta = $stmt->get_result()->fetch_assoc();
                     if (!$meta) {
-                        throw new Exception('Anggota atau jenis simpanan tidak ditemukan.');
+                        throw new Exception('Anggota tidak ditemukan.');
                     }
-                    $prefix = 'SIM-' . $meta['member_number'] . '-' . $savings_type_id;
-                    $stmt = db()->prepare('SELECT COUNT(*) AS c FROM savings_accounts WHERE account_number LIKE ?');
-                    $like = $prefix . '%';
-                    $stmt->bind_param('s', $like);
-                    $stmt->execute();
-                    $seq = (int) $stmt->get_result()->fetch_assoc()['c'] + 1;
-                    $account_number = $prefix . '-' . str_pad((string) $seq, 2, '0', STR_PAD_LEFT);
+                    // Generate account number atomically
+                    $account_number = generate_savings_account_number($meta['member_number'], $savings_type_id);
 
                     $stmt = db()->prepare('INSERT INTO savings_accounts (member_id, savings_type_id, account_number, balance, status, opened_date) VALUES (?, ?, ?, 0, "active", ?)');
                     $stmt->bind_param('iiss', $member_id, $savings_type_id, $account_number, $transaction_date);

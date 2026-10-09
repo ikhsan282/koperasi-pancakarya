@@ -251,6 +251,13 @@ CREATE TABLE `loan_payments` (
   CONSTRAINT `loan_payments_ibfk_2` FOREIGN KEY (`processed_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Atomic sequences for race-free number generation
+CREATE TABLE `sequences` (
+  `name` varchar(50) NOT NULL,
+  `current_value` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Activity logs
 CREATE TABLE `activity_logs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,

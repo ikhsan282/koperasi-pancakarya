@@ -143,15 +143,16 @@ $stmt = db()->query('SELECT COALESCE(SUM(amount),0) AS total FROM loan_payments
                      WHERE MONTH(payment_date) = MONTH(CURRENT_DATE) AND YEAR(payment_date) = YEAR(CURRENT_DATE)');
 $installments_this_month = $stmt->fetch_assoc()['total'];
 
-// Pinjaman jatuh tempo belum bayar: pinjaman aktif yang sisa angsurannya sudah melewati jumlah angsuran tercatat
-// (siklus angsuran berjalan bulanan sejak pencairan; belum ada tabel jadwal → turunkan dari disbursement_date)
+// Pinjaman jatuh tempo belum bayar: angsuran yang sudah lewat jatuh tempo tapi belum dibayar
 $stmt = db()->query('SELECT l.id, l.loan_number, m.member_number, m.full_name, l.monthly_payment,
-                     TIMESTAMPDIFF(MONTH, l.disbursement_date, CURRENT_DATE) + 1 AS months_elapsed,
-                     (SELECT COUNT(*) FROM loan_payments lp WHERE lp.loan_id = l.id) AS paid_count
-                     FROM loans l JOIN members m ON m.id = l.member_id
-                     WHERE l.status = "active" AND l.disbursement_date IS NOT NULL
-                     HAVING months_elapsed > paid_count
-                     ORDER BY months_elapsed - paid_count DESC');
+                     COUNT(CASE WHEN lp.status != "paid" AND lp.due_date < CURRENT_DATE THEN 1 END) AS overdue_count
+                     FROM loans l 
+                     JOIN members m ON m.id = l.member_id
+                     JOIN loan_payments lp ON lp.loan_id = l.id
+                     WHERE l.status = "active"
+                     GROUP BY l.id
+                     HAVING overdue_count > 0
+                     ORDER BY overdue_count DESC');
 $overdue_loans = $stmt->fetch_all(MYSQLI_ASSOC);
 
 // Trend simpanan vs angsuran 6 bulan terakhir
@@ -249,7 +250,7 @@ require __DIR__ . '/../../includes/header.php';
                     <td><strong><?= e($row['loan_number']) ?></strong></td>
                     <td><?= e($row['member_number']) ?> - <?= e($row['full_name']) ?></td>
                     <td><?= rupiah($row['monthly_payment']) ?></td>
-                    <td><span class="badge badge-danger"><?= (int) $row['months_elapsed'] - (int) $row['paid_count'] ?>x belum bayar</span></td>
+                    <td><span class="badge badge-danger"><?= (int) $row['overdue_count'] ?> angsuran lewat jatuh tempo</span></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>

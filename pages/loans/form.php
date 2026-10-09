@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/loan_tools.php';
+require_once __DIR__ . '/../../includes/sequences.php';
 
 require_permission('loans.create');
 
@@ -56,13 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $calculation = calculate_flat_loan($amount, $interest_rate, $term_months);
         $monthly_payment = $calculation['monthly_payment'];
 
-        $prefix = 'L-' . date('Ym') . '-';
-        $stmt = db()->prepare('SELECT COUNT(*) AS total FROM loans WHERE loan_number LIKE ?');
-        $likePrefix = $prefix . '%';
-        $stmt->bind_param('s', $likePrefix);
-        $stmt->execute();
-        $count = (int) $stmt->get_result()->fetch_assoc()['total'] + 1;
-        $loan_number = $prefix . str_pad((string) $count, 4, '0', STR_PAD_LEFT);
+        // Generate loan number atomically
+        $loan_number = generate_loan_number();
 
         $stmt = db()->prepare('INSERT INTO loans (member_id, loan_product_id, loan_number, amount, interest_rate, term_months, monthly_payment, purpose, status, application_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "pending", CURDATE())');
         $stmt->bind_param('iisddids', $member_id, $product_id, $loan_number, $amount, $interest_rate, $term_months, $monthly_payment, $purpose);

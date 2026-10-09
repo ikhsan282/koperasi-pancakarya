@@ -79,6 +79,18 @@ if ($action === 'disburse') {
         flash('error', 'Tanggal pencairan tidak valid.');
         redirect('pages/loans/detail.php?id=' . $id);
     }
+    
+    // Validate disbursement date constraints
+    $today = new DateTime();
+    $app_date = new DateTime($loan['application_date']);
+    if ($date_obj > $today) {
+        flash('error', 'Tanggal pencairan tidak boleh di masa depan.');
+        redirect('pages/loans/detail.php?id=' . $id);
+    }
+    if ($date_obj < $app_date) {
+        flash('error', 'Tanggal pencairan tidak boleh sebelum tanggal pengajuan (' . $app_date->format('d/m/Y') . ').');
+        redirect('pages/loans/detail.php?id=' . $id);
+    }
 
     $db = db();
     $db->begin_transaction();
