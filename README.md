@@ -11,7 +11,7 @@ Sistem Manajemen Koperasi - PHP Native dengan MySQLi
 - **Buku Tabungan**: Cetak mutasi lengkap per anggota dengan saldo berjalan
 - **Pengingat Jatuh Tempo**: Kirim email pengingat angsuran dengan dedup harian
 - **Distribusi SHU**: Hitung jasa modal dari saldo simpanan dan jasa anggota dari bunga pinjaman dibayar, sesuaikan per anggota, lalu finalisasi per tahun
-- **Laporan**: Dashboard statistik dan log aktivitas
+- **Laporan**: Dashboard statistik, log aktivitas, serta ekspor Excel untuk laporan simpanan, pinjaman, dan arus kas
 - **Role-Based Access Control**: Super Admin, Admin, Bendahara, Anggota
 - **Activity Logging**: Audit trail lengkap
 - **PWA & Portal Mobile**: Portal anggota dapat dipasang di ponsel dan memiliki fallback offline
@@ -19,13 +19,15 @@ Sistem Manajemen Koperasi - PHP Native dengan MySQLi
 
 ## Teknologi
 
-- PHP 8.5+
+- PHP 8.5+ (Native, tanpa framework)
 - MySQL 5.7+ / MariaDB 10.3+
-- MySQLi (prepared statements)
-- Bootstrap 5.3.8 (CDN)
-- Bootstrap Icons 1.13.2 (CDN)
+- MySQLi dengan prepared statements
+- Bootstrap 5.3.8 + Bootstrap Icons 1.13.2 (CDN)
 - Chart.js 4.5.1 (CDN)
+- Tom Select 2.3.1 (CDN)
 - Vanilla JavaScript
+- PWA (Web App Manifest + Service Worker)
+- Generator PDF dan XLSX native tanpa Composer
 
 ## Instalasi
 
@@ -127,11 +129,12 @@ koperasi-pancakarya/
 
 ## Development
 
-Database memiliki **15 tabel**:
+Database memiliki **16 tabel**:
 - roles, permissions, role_permissions
 - users, members
 - savings_types, savings_accounts, savings_transactions
 - loan_products, loans, loan_payments
+- sequences
 - activity_logs, email_logs
 - shu_periods, shu_distributions
 
