@@ -161,7 +161,7 @@ foreach ($all_loans as $loan) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Anggota - <?= e(APP_NAME) ?></title>
     <link rel="manifest" href="<?= url('manifest.json') ?>">
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#2563eb">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.css" rel="stylesheet">
     <script>
@@ -218,7 +218,7 @@ foreach ($all_loans as $loan) {
             transition: color 0.2s;
         }
         .bottom-nav-item.active {
-            color: #667eea;
+            color: #2563eb;
         }
         .bottom-nav-item i {
             display: block;
@@ -244,7 +244,7 @@ foreach ($all_loans as $loan) {
         .stat-value {
             font-size: 1.5rem;
             font-weight: bold;
-            color: #667eea;
+            color: #2563eb;
         }
         .transaction-item {
             background: var(--surface);
@@ -256,7 +256,7 @@ foreach ($all_loans as $loan) {
         .badge-deposit { background: #28a745; }
         .badge-withdrawal { background: #dc3545; }
         .install-banner {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
             color: white;
             padding: 1rem;
             border-radius: 0.5rem;

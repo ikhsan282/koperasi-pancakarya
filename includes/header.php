@@ -11,7 +11,7 @@ $title = $title ?? APP_NAME;
     (function(){try{var t=localStorage.getItem('pancakarya_theme');if(!t)t=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';document.documentElement.setAttribute('data-bs-theme',t);}catch(e){}})();
     </script>
     <link rel="manifest" href="<?= url('manifest.json') ?>">
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#2563eb">
     <script>window.APP_URL = <?= json_encode(APP_URL) ?>;</script>
     <link rel="stylesheet" href="<?= url('assets/css/app.css') ?>">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">

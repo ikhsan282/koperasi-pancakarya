@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulasi Pinjaman - <?= e(APP_NAME) ?></title>
     <link rel="manifest" href="<?= url('manifest.json') ?>">
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#2563eb">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
@@ -111,13 +111,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             text-decoration: none;
             display: inline-block;
         }
-        .btn-primary { background: #667eea; color: white; }
+        .btn-primary { background: #2563eb; color: white; }
         .btn-primary:hover { background: #5568d3; }
         .btn-secondary { background: #6c757d; color: white; }
         .alert { padding: 1rem; border-radius: 0.25rem; margin-bottom: 1rem; }
         .alert-danger { background: #f8d7da; color: #721c24; }
         .result-box {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
             color: white;
             padding: 1.5rem;
             border-radius: 0.5rem;

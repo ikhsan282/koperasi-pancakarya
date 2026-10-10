@@ -21,8 +21,8 @@ if (!empty($_SESSION['user_id'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        .hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 5rem 0; }
-        .feature-icon { font-size: 3rem; color: #667eea; }
+        .hero { background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%); color: white; padding: 5rem 0; }
+        .feature-icon { font-size: 3rem; color: #2563eb; }
     </style>
 </head>
 <body>
