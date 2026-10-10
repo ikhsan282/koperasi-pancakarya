@@ -12,9 +12,11 @@ $current_url = $_SERVER['REQUEST_URI'] ?? '';
         <?php if (can('members.view')): ?><a href="<?= url('pages/members/index.php') ?>">♙ Anggota</a><?php endif; ?>
         <?php if (can('savings.view')): ?><a href="<?= url('pages/savings/index.php') ?>">◉ Simpanan</a><?php endif; ?>
         <?php if (can('loans.view')): ?><a href="<?= url('pages/loans/index.php') ?>">◇ Pinjaman</a><?php endif; ?>
+        <?php if (can('cashbank.view')): ?><a href="<?= url('pages/cashbank/accounts.php') ?>">💰 Kas & Bank</a><?php endif; ?>
         <?php if (can('loans.send_reminder')): ?><a href="<?= url('pages/loans/reminders.php') ?>">📧 Pengingat</a><?php endif; ?>
         <?php if (can('reports.view')): ?><a href="<?= url('pages/reports/index.php') ?>">▤ Laporan</a><?php endif; ?>
         <?php if (can('shu.view')): ?><a href="<?= url('pages/shu/index.php') ?>">% SHU</a><?php endif; ?>
+        <?php if (can('settings.manage')): ?><a href="<?= url('pages/settings/index.php') ?>">⚙ Pengaturan</a><?php endif; ?>
     </nav>
     <div class="sidebar-user">
         <small>Masuk sebagai</small>

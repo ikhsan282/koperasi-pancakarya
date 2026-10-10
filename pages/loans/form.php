@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $amount = (float) ($_POST['amount'] ?? 0);
     $term_months = (int) ($_POST['term_months'] ?? 0);
     $purpose = trim($_POST['purpose'] ?? '');
+    $admin_fee_pct = (float) ($_POST['admin_fee_pct'] ?? get_setting('default_admin_fee_pct', '2.0'));
 
     $product = null;
     if ($product_id > 0) {
@@ -56,12 +57,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $interest_rate = (float) $product['interest_rate'];
         $calculation = calculate_flat_loan($amount, $interest_rate, $term_months);
         $monthly_payment = $calculation['monthly_payment'];
+        $admin_fee_amount = round($amount * ($admin_fee_pct / 100), 2);
 
         // Generate loan number atomically
         $loan_number = generate_loan_number();
 
-        $stmt = db()->prepare('INSERT INTO loans (member_id, loan_product_id, loan_number, amount, interest_rate, term_months, monthly_payment, purpose, status, application_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "pending", CURDATE())');
-        $stmt->bind_param('iisddids', $member_id, $product_id, $loan_number, $amount, $interest_rate, $term_months, $monthly_payment, $purpose);
+        $stmt = db()->prepare('INSERT INTO loans (member_id, loan_product_id, loan_number, amount, interest_rate, term_months, admin_fee_pct, admin_fee_amount, monthly_payment, purpose, status, application_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "pending", CURDATE())');
+        $stmt->bind_param('iisddiddds', $member_id, $product_id, $loan_number, $amount, $interest_rate, $term_months, $admin_fee_pct, $admin_fee_amount, $monthly_payment, $purpose);
         $stmt->execute();
 
         log_activity('apply_loan', "Pengajuan pinjaman {$loan_number} produk {$product['name']}");
@@ -131,10 +133,17 @@ require __DIR__ . '/../../includes/header.php';
             </div>
         </div>
 
+        <div class="form-group">
+            <label for="admin_fee_pct">Biaya Admin (%) *</label>
+            <input type="number" id="admin_fee_pct" name="admin_fee_pct" step="0.01" min="0" max="100" value="<?= e($_POST['admin_fee_pct'] ?? get_setting('default_admin_fee_pct', '2.0')) ?>" required>
+            <small style="display: block; margin-top: 0.25rem; color: #718096;">Biaya admin akan dihitung dari jumlah pinjaman</small>
+        </div>
+
         <div id="simulation" style="display: none; margin: 1.25rem 0; padding: 1rem; background: #ebf8ff; border: 1px solid #bee3f8; border-radius: 6px;">
             <h4 style="margin: 0 0 0.75rem; color: #2b6cb0;">Simulasi Angsuran (Bunga Flat)</h4>
             <table class="table-info" style="width: 100%; max-width: 600px;">
                 <tr><th>Pokok Pinjaman</th><td id="sim-principal">-</td></tr>
+                <tr><th>Biaya Admin</th><td id="sim-admin-fee">-</td></tr>
                 <tr><th>Pokok / Bulan</th><td id="sim-principal-monthly">-</td></tr>
                 <tr><th>Bunga / Bulan</th><td id="sim-interest-monthly">-</td></tr>
                 <tr><th><strong>Angsuran / Bulan</strong></th><td id="sim-monthly"><strong>-</strong></td></tr>
@@ -161,6 +170,7 @@ require __DIR__ . '/../../includes/header.php';
     const product = document.getElementById('loan_product_id');
     const amount = document.getElementById('amount');
     const tenor = document.getElementById('term_months');
+    const adminFeePct = document.getElementById('admin_fee_pct');
     const info = document.getElementById('product-info');
     const simulation = document.getElementById('simulation');
     const rupiah = n => 'Rp ' + Math.round(n).toLocaleString('id-ID');
@@ -185,13 +195,16 @@ require __DIR__ . '/../../includes/header.php';
 
         const principal = parseFloat(amount.value);
         const months = parseInt(tenor.value, 10);
+        const adminFee = parseFloat(adminFeePct.value) || 0;
         if (principal > 0 && months > 0) {
+            const adminFeeAmount = principal * adminFee / 100;
             const principalMonthly = principal / months;
             const interestMonthly = principal * rate / 100;
             const monthly = principalMonthly + interestMonthly;
             const totalInterest = interestMonthly * months;
-            const total = principal + totalInterest;
+            const total = principal + totalInterest + adminFeeAmount;
             document.getElementById('sim-principal').textContent = rupiah(principal);
+            document.getElementById('sim-admin-fee').textContent = rupiah(adminFeeAmount) + ' (' + adminFee + '%)';
             document.getElementById('sim-principal-monthly').textContent = rupiah(principalMonthly);
             document.getElementById('sim-interest-monthly').textContent = rupiah(interestMonthly) + ' (' + rate + '%)';
             document.getElementById('sim-monthly').innerHTML = '<strong>' + rupiah(monthly) + '</strong>';
@@ -206,6 +219,7 @@ require __DIR__ . '/../../includes/header.php';
     product.addEventListener('change', update);
     amount.addEventListener('input', update);
     tenor.addEventListener('input', update);
+    adminFeePct.addEventListener('input', update);
     update();
 })();
 </script>

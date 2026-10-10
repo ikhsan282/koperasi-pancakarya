@@ -33,6 +33,13 @@ require __DIR__ . '/../../includes/header.php';
             <div class="stat-value">Per Tahun</div>
         </div>
     </div>
+    <div class="stat-card">
+        <div class="stat-icon">⊞</div>
+        <div class="stat-info">
+            <div class="stat-label">Posisi Keuangan</div>
+            <div class="stat-value">Neraca</div>
+        </div>
+    </div>
 </div>
 
 <div class="card">
@@ -65,6 +72,13 @@ require __DIR__ . '/../../includes/header.php';
                 <td>Pemasukan (setoran + angsuran) vs pengeluaran (penarikan + pencairan) per bulan</td>
                 <td>
                     <a href="<?= url('pages/reports/cashflow.php') ?>" class="btn btn-sm btn-primary">Lihat</a>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Laporan Posisi Keuangan</strong></td>
+                <td>Neraca koperasi: aset, kewajiban, dan ekuitas per tahun</td>
+                <td>
+                    <a href="<?= url('pages/reports/financial_position.php') ?>" class="btn btn-sm btn-primary">Lihat</a>
                 </td>
             </tr>
         </tbody>

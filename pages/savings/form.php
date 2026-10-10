@@ -63,6 +63,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($errors)) {
         $amount = round((float) $amount, 2);
+        $cashbank_account_id = (int) ($_POST['cashbank_account_id'] ?? 0);
+        
+        require_once __DIR__ . '/../../includes/cashbank_helpers.php';
 
         db()->begin_transaction();
         try {
@@ -125,6 +128,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = db()->prepare('UPDATE savings_accounts SET balance = ? WHERE id = ?');
             $stmt->bind_param('di', $balance_after, $acc_id);
             $stmt->execute();
+            
+            // Auto-post to cash/bank
+            if ($cashbank_account_id > 0) {
+                $cb_type = $transaction_type === 'deposit' ? 'debit' : 'credit';
+                $cb_ref = $transaction_type === 'deposit' ? 'savings_deposit' : 'savings_withdrawal';
+                post_cashbank_transaction(
+                    $cashbank_account_id,
+                    $cb_type,
+                    $amount,
+                    $cb_ref,
+                    $trx_id,
+                    ucfirst($transaction_type) . " simpanan {$locked['account_number']} - {$locked['full_name']}",
+                    $transaction_date
+                );
+            }
 
             db()->commit();
             log_activity('savings_transaction', ucfirst($transaction_type) . ' ' . rupiah($amount) . ' pada rekening ' . $locked['account_number']);
@@ -221,6 +239,21 @@ require __DIR__ . '/../../includes/header.php';
                 <input type="text" id="description" name="description" value="<?= old('description') ?>">
             </div>
         </div>
+        
+        <?php if (can('cashbank.manage')): ?>
+        <div class="form-group">
+            <label for="cashbank_account_id">Catat ke Akun Kas/Bank</label>
+            <select id="cashbank_account_id" name="cashbank_account_id">
+                <option value="">-- Tidak dicatat --</option>
+                <?php
+                $cb_accounts = db()->query('SELECT id, account_name, balance FROM cash_bank_accounts WHERE is_active = 1 ORDER BY account_name');
+                while ($cba = $cb_accounts->fetch_assoc()): ?>
+                    <option value="<?= $cba['id'] ?>"><?= e($cba['account_name']) ?> - Saldo: <?= rupiah($cba['balance']) ?></option>
+                <?php endwhile; ?>
+            </select>
+            <small style="display: block; margin-top: 0.25rem; color: #666;">Opsional: otomatis catat penerimaan/pengeluaran ke akun kas/bank</small>
+        </div>
+        <?php endif; ?>
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Simpan Transaksi</button>
