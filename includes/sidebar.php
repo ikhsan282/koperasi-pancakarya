@@ -16,6 +16,7 @@ $current_url = $_SERVER['REQUEST_URI'] ?? '';
         <?php if (can('loans.send_reminder')): ?><a href="<?= url('pages/loans/reminders.php') ?>">📧 Pengingat</a><?php endif; ?>
         <?php if (can('reports.view')): ?><a href="<?= url('pages/reports/index.php') ?>">▤ Laporan</a><?php endif; ?>
         <?php if (can('shu.view')): ?><a href="<?= url('pages/shu/index.php') ?>">% SHU</a><?php endif; ?>
+        <?php if (can('settings.manage')): ?><a href="<?= url('pages/settings/index.php') ?>">⚙ Pengaturan</a><?php endif; ?>
     </nav>
     <div class="sidebar-user">
         <small>Masuk sebagai</small>

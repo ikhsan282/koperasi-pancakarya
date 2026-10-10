@@ -244,6 +244,7 @@ require __DIR__ . '/../../includes/header.php';
                     <td colspan="2">TOTAL</td>
                     <td><?= rupiah(array_sum(array_column($all_payments, 'principal_amount'))) ?></td>
                     <td><?= rupiah(array_sum(array_column($all_payments, 'interest_amount'))) ?></td>
+                    <td><?= rupiah(array_sum(array_column($all_payments, 'penalty_amount'))) ?></td>
                     <td><?= rupiah(array_sum(array_map(fn($x) => $x['amount_due'] > 0 ? $x['amount_due'] : $x['amount'], $all_payments))) ?></td>
                     <td></td>
                     <td><?= rupiah($total_paid) ?></td>

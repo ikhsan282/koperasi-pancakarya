@@ -3,6 +3,8 @@ require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/loan_tools.php';
+require_once __DIR__ . '/../../includes/cashbank_helpers.php';
 
 require_permission('loans.edit');
 
@@ -48,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
 
     $payment_date = trim($_POST['payment_date'] ?? '');
+    $cashbank_account_id = (int) ($_POST['cashbank_account_id'] ?? 0);
     $payment_amount = (float) ($_POST['payment_amount'] ?? 0);
     $date_obj = DateTime::createFromFormat('Y-m-d', $payment_date);
 
