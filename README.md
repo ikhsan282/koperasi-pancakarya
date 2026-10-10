@@ -46,10 +46,10 @@ Buat database MySQL:
 CREATE DATABASE koperasi_pancakarya CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-Import schema:
+Import schema (CREATE DATABASE included):
 
 ```bash
-mysql -u root -p koperasi_pancakarya < database/schema.sql
+mysql -u root -p < database/schema.sql
 ```
 
 ### 3. Konfigurasi Aplikasi
@@ -57,12 +57,12 @@ mysql -u root -p koperasi_pancakarya < database/schema.sql
 Edit `config/config.php` sesuai environment Anda:
 
 ```php
-const APP_URL = 'http://localhost:8080/koperasi-pancakarya';
-const DB_HOST = 'localhost';
-const DB_NAME = 'koperasi_pancakarya';
-const DB_USER = 'root';
-const DB_PASS = '';
-const MAIL_FROM = 'noreply@domain-koperasi-anda';
+defined('APP_URL') || define('APP_URL', 'http://localhost:8080/koperasi-pancakarya');
+defined('DB_HOST') || define('DB_HOST', 'localhost');
+defined('DB_NAME') || define('DB_NAME', 'koperasi_pancakarya');
+defined('DB_USER') || define('DB_USER', 'root');
+defined('DB_PASS') || define('DB_PASS', '');
+defined('MAIL_FROM') || define('MAIL_FROM', 'noreply@domain-koperasi-anda');
 ```
 
 ### 4. Set Permissions
@@ -90,6 +90,7 @@ koperasi-pancakarya/
 │   ├── auth.php           # Autentikasi & otorisasi
 │   ├── functions.php      # Helper functions
 │   ├── header.php         # Template header
+│   ├── sidebar.php        # Navigation sidebar
 │   └── footer.php         # Template footer
 ├── pages/
 │   ├── auth/              # Login, logout
