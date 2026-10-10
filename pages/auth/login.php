@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Masuk · <?= e(APP_NAME) ?></title>
-    <link rel="stylesheet" href="<?= url('public/css/app.css') ?>">
+    <link rel="stylesheet" href="<?= url('assets/css/app.css') ?>">
 </head>
 <body class="auth-page">
     <div class="auth-container">

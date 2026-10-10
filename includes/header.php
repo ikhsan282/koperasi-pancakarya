@@ -13,7 +13,7 @@ $title = $title ?? APP_NAME;
     <link rel="manifest" href="<?= url('manifest.json') ?>">
     <meta name="theme-color" content="#667eea">
     <script>window.APP_URL = <?= json_encode(APP_URL) ?>;</script>
-    <link rel="stylesheet" href="<?= url('public/css/app.css') ?>">
+    <link rel="stylesheet" href="<?= url('assets/css/app.css') ?>">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
 </head>
 <body>

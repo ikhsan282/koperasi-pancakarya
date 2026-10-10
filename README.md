@@ -99,7 +99,7 @@ koperasi-pancakarya/
 │   ├── loans/             # Pinjaman & cicilan
 │   ├── shu/               # Distribusi SHU tahunan
 │   └── reports/           # Laporan
-├── public/
+├── assets/
 │   ├── css/              # Stylesheet
 │   └── js/               # JavaScript
 ├── database/
