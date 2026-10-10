@@ -1,9 +1,14 @@
 -- Koperasi Pancakarya Database Schema
 -- Fresh install schema - single source of truth
+-- DB: koperasi_pancakarya
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET time_zone = "+07:00";
+
+CREATE DATABASE IF NOT EXISTS `koperasi_pancakarya` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `koperasi_pancakarya`;
+
 START TRANSACTION;
-SET time_zone = "+00:00";
 
 -- Roles table
 CREATE TABLE `roles` (
