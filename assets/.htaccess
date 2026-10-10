@@ -1,0 +1,20 @@
+# Disable directory listing
+Options -Indexes
+
+# Prevent execution of PHP scripts
+<FilesMatch "\.(php|phtml|php3|php4|php5|phps|cgi|pl|py|jsp|asp|aspx)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    Order deny,allow
+    Deny from all
+</FilesMatch>
+
+# Block access to hidden files and directories
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    Order deny,allow
+    Deny from all
+</FilesMatch>
