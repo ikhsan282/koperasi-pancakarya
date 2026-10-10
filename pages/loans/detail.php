@@ -12,7 +12,7 @@ if ($id <= 0) {
     redirect('pages/loans/index.php');
 }
 
-$stmt = db()->prepare('SELECT l.*, m.member_number, m.full_name, m.phone, m.address, lp.name AS product_name, u.full_name AS approver_name
+$stmt = db()->prepare('SELECT l.*, m.member_number, m.full_name, m.phone, m.address, lp.name AS product_name, lp.approval_levels, u.full_name AS approver_name
                        FROM loans l
                        JOIN members m ON l.member_id = m.id
                        LEFT JOIN loan_products lp ON l.loan_product_id = lp.id
@@ -48,6 +48,12 @@ $c_stmt = db()->prepare('SELECT COUNT(*) as total FROM loan_collaterals WHERE lo
 $c_stmt->bind_param('i', $id);
 $c_stmt->execute();
 $collateral_count = $c_stmt->get_result()->fetch_assoc()['total'];
+
+// Fetch approval history
+$a_stmt = db()->prepare('SELECT la.*, u.full_name AS approver_name FROM loan_approvals la JOIN users u ON la.approver_id = u.id WHERE la.loan_id = ? ORDER BY la.approver_level ASC');
+$a_stmt->bind_param('i', $id);
+$a_stmt->execute();
+$approvals = $a_stmt->get_result();
 
 $title = 'Detail Pinjaman - ' . $loan['loan_number'];
 require __DIR__ . '/../../includes/header.php';
@@ -120,24 +126,118 @@ require __DIR__ . '/../../includes/header.php';
     </div>
 </div>
 
-<?php if ($loan['status'] === 'pending' && can('loans.approve')): ?>
+<?php if ($approvals->num_rows > 0 || ((int)($loan['approval_levels'] ?? 1) === 2 && (int)$loan['current_approval_level'] > 0)): ?>
+<div class="card" style="margin-bottom: 1.5rem;">
+    <h3 style="margin-top: 0;">Riwayat Persetujuan</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Level</th>
+                <th>Approver</th>
+                <th>Status</th>
+                <th>Waktu</th>
+                <th>Catatan</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if ($approvals->num_rows === 0): ?>
+                <tr><td colspan="5" class="text-center">Belum ada riwayat approval</td></tr>
+            <?php else: ?>
+                <?php $approvals->data_seek(0); while ($appr = $approvals->fetch_assoc()): ?>
+                    <tr>
+                        <td><strong>Level <?= $appr['approver_level'] ?></strong></td>
+                        <td><?= e($appr['approver_name']) ?></td>
+                        <td>
+                            <span class="badge badge-<?= $appr['status'] === 'approved' ? 'success' : 'danger' ?>">
+                                <?= $appr['status'] === 'approved' ? '✓ Disetujui' : '✕ Ditolak' ?>
+                            </span>
+                        </td>
+                        <td><?= date('d/m/Y H:i', strtotime($appr['approved_at'])) ?></td>
+                        <td><?= e($appr['notes'] ?? '-') ?></td>
+                    </tr>
+                <?php endwhile; ?>
+            <?php endif; ?>
+        </tbody>
+    </table>
+    <?php if ((int)($loan['approval_levels'] ?? 1) === 2): ?>
+        <div style="margin-top: 1rem; padding: 0.75rem; background: #f7fafc; border-radius: 4px; font-size: 0.9rem;">
+            <strong>Status Workflow:</strong> 
+            <?php
+            $curr_lvl = (int)$loan['current_approval_level'];
+            if ($loan['status'] === 'pending' && $curr_lvl === 0) {
+                echo '⏳ Menunggu Approval Level 1 (Admin)';
+            } elseif ($loan['status'] === 'pending' && $curr_lvl === 1) {
+                echo '⏳ Menunggu Approval Level 2 (Super Admin - Final)';
+            } elseif ($loan['status'] === 'approved' && $curr_lvl === 2) {
+                echo '✅ Fully Approved (2 Level)';
+            } elseif ($loan['status'] === 'approved') {
+                echo '✅ Approved';
+            }
+            ?>
+        </div>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
+
+<?php
+$approval_levels = (int) ($loan['approval_levels'] ?? 1);
+$current_level = (int) $loan['current_approval_level'];
+$can_approve_l1 = can('loans.approve');
+$can_approve_l2 = can('loans.approve_final');
+$show_approval_section = false;
+
+if ($loan['status'] === 'pending') {
+    if ($approval_levels === 1 && $can_approve_l1) {
+        $show_approval_section = true;
+    } elseif ($approval_levels === 2) {
+        if ($current_level === 0 && $can_approve_l1) {
+            $show_approval_section = true;
+        } elseif ($current_level === 1 && $can_approve_l2) {
+            $show_approval_section = true;
+        }
+    }
+}
+?>
+
+<?php if ($show_approval_section): ?>
     <div class="card" style="margin-bottom: 1.5rem; background: #faf5ff; border: 1px solid #d6bcfa;">
-        <h4 style="margin-top: 0; color: #553c9e;">Persetujuan / Penolakan Pinjaman</h4>
+        <h4 style="margin-top: 0; color: #553c9e;">
+            <?php if ($approval_levels === 2): ?>
+                Persetujuan Level <?= $current_level + 1 ?> <?= $current_level === 0 ? '(Admin)' : '(Super Admin - Final)' ?>
+            <?php else: ?>
+                Persetujuan / Penolakan Pinjaman
+            <?php endif; ?>
+        </h4>
+        
+        <?php if ($approval_levels === 2 && $current_level === 1): ?>
+            <div class="alert info" style="margin-bottom: 1rem;">
+                <strong>ℹ Level 2 Approval:</strong> Pinjaman ini telah disetujui Level 1 (Admin). Diperlukan persetujuan final dari Super Admin.
+            </div>
+        <?php endif; ?>
+        
         <?php if ($loan['amount'] >= 5000000 && $collateral_count === 0): ?>
             <div class="alert warning" style="margin-bottom: 1rem;">
                 <strong>⚠ Agunan Wajib:</strong> Pinjaman ≥ Rp 5.000.000 wajib memiliki minimal 1 agunan sebelum dapat disetujui.
                 <a href="<?= url('pages/collateral/index.php?loan_id=' . $loan['id']) ?>" style="text-decoration: underline;">Tambah agunan sekarang →</a>
             </div>
         <?php endif; ?>
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-            <form method="post" action="<?= url('pages/loans/process.php?id=' . $loan['id']) ?>" style="display: inline;">
-                <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
-                <input type="hidden" name="action" value="approve">
-                <button type="submit" class="btn btn-success" onclick="return confirm('Setujui pengajuan pinjaman ini?')">✓ Setujui Pinjaman</button>
-            </form>
-
-            <button type="button" class="btn btn-danger" onclick="document.getElementById('reject-form-box').style.display = document.getElementById('reject-form-box').style.display === 'none' ? 'block' : 'none';">✕ Tolak Pinjaman...</button>
-        </div>
+        
+        <form method="post" action="<?= url('pages/loans/process.php?id=' . $loan['id']) ?>">
+            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+            <input type="hidden" name="action" value="approve">
+            
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="approval_notes">Catatan Persetujuan (Opsional)</label>
+                <textarea id="approval_notes" name="approval_notes" rows="2" placeholder="Tambahkan catatan jika diperlukan..." style="width: 100%; max-width: 600px;"></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button type="submit" class="btn btn-success" onclick="return confirm('Setujui pengajuan pinjaman ini?')">
+                    ✓ <?= $approval_levels === 2 && $current_level === 1 ? 'Setujui Final (Level 2)' : 'Setujui Pinjaman' ?>
+                </button>
+                <button type="button" class="btn btn-danger" onclick="document.getElementById('reject-form-box').style.display = document.getElementById('reject-form-box').style.display === 'none' ? 'block' : 'none';">✕ Tolak Pinjaman...</button>
+            </div>
+        </form>
 
         <div id="reject-form-box" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #cbd5e0;">
             <form method="post" action="<?= url('pages/loans/process.php?id=' . $loan['id']) ?>">

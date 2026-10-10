@@ -50,6 +50,17 @@ $stmt->bind_param('i', $account_id);
 $stmt->execute();
 $summary = $stmt->get_result()->fetch_assoc();
 
+// Get interest history for this account
+$stmt = db()->prepare('SELECT sih.*, u.full_name AS posted_by_name
+                       FROM savings_interest_history sih
+                       LEFT JOIN users u ON sih.posted_by = u.id
+                       WHERE sih.savings_account_id = ?
+                       ORDER BY sih.period_start DESC
+                       LIMIT 12');
+$stmt->bind_param('i', $account_id);
+$stmt->execute();
+$interest_history = $stmt->get_result();
+
 require __DIR__ . '/../../includes/header.php';
 ?>
 
@@ -78,6 +89,9 @@ require __DIR__ . '/../../includes/header.php';
             </span>
         </td></tr>
         <tr><th>Saldo Saat Ini</th><td><strong><?= rupiah($account['balance']) ?></strong></td></tr>
+        <?php if ($account['last_interest_date']): ?>
+        <tr><th>Terakhir Posting Bunga</th><td><?= date('d/m/Y', strtotime($account['last_interest_date'])) ?></td></tr>
+        <?php endif; ?>
     </table>
 </div>
 
@@ -99,6 +113,37 @@ require __DIR__ . '/../../includes/header.php';
         </div>
     </div>
 </div>
+
+<?php if ($interest_history->num_rows > 0): ?>
+<div class="card">
+    <h3>Riwayat Bunga (12 bulan terakhir)</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Periode</th>
+                <th>Saldo Dasar</th>
+                <th>Rate (%)</th>
+                <th>Bunga</th>
+                <th>Tgl Posting</th>
+                <th>Oleh</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php while ($ih = $interest_history->fetch_assoc()): ?>
+                <tr>
+                    <td><?= date('M Y', strtotime($ih['period_start'])) ?></td>
+                    <td><?= rupiah($ih['balance_base']) ?></td>
+                    <td><?= number_format($ih['interest_rate'], 2) ?>%</td>
+                    <td><strong><?= rupiah($ih['interest_amount']) ?></strong></td>
+                    <td><?= date('d/m/Y', strtotime($ih['posted_date'])) ?></td>
+                    <td><small><?= e($ih['posted_by_name'] ?? '-') ?></small></td>
+                </tr>
+            <?php endwhile; ?>
+        </tbody>
+    </table>
+    <a href="<?= url('pages/savings/interest_history.php?member_id=' . $account['member_id']) ?>" class="btn btn-text">Lihat Semua Riwayat Bunga →</a>
+</div>
+<?php endif; ?>
 
 <div class="card">
     <h3>Mutasi Rekening</h3>
