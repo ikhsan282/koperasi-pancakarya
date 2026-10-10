@@ -34,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $max_tenor_months = (int) ($_POST['max_tenor_months'] ?? 0);
     $min_amount = (float) ($_POST['min_amount'] ?? 0);
     $max_amount = (float) ($_POST['max_amount'] ?? 0);
+    $approval_levels = (int) ($_POST['approval_levels'] ?? 1);
     $is_active = isset($_POST['is_active']) ? 1 : 0;
 
     if ($name === '') $errors[] = 'Nama produk wajib diisi.';
@@ -45,14 +46,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($errors)) {
         if ($is_edit) {
-            $stmt = db()->prepare('UPDATE loan_products SET name=?, interest_rate=?, max_tenor_months=?, min_amount=?, max_amount=?, is_active=? WHERE id=?');
-            $stmt->bind_param('sdiddii', $name, $interest_rate, $max_tenor_months, $min_amount, $max_amount, $is_active, $id);
+            $stmt = db()->prepare('UPDATE loan_products SET name=?, interest_rate=?, max_tenor_months=?, min_amount=?, max_amount=?, approval_levels=?, is_active=? WHERE id=?');
+            $stmt->bind_param('sdiddiii', $name, $interest_rate, $max_tenor_months, $min_amount, $max_amount, $approval_levels, $is_active, $id);
             $stmt->execute();
             log_activity('edit_loan_product', "Edit produk pinjaman: {$name}");
             flash('success', 'Produk pinjaman berhasil diperbarui.');
         } else {
-            $stmt = db()->prepare('INSERT INTO loan_products (name, interest_rate, max_tenor_months, min_amount, max_amount, is_active) VALUES (?, ?, ?, ?, ?, ?)');
-            $stmt->bind_param('sdiddi', $name, $interest_rate, $max_tenor_months, $min_amount, $max_amount, $is_active);
+            $stmt = db()->prepare('INSERT INTO loan_products (name, interest_rate, max_tenor_months, min_amount, max_amount, approval_levels, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)');
+            $stmt->bind_param('sdiddii', $name, $interest_rate, $max_tenor_months, $min_amount, $max_amount, $approval_levels, $is_active);
             $stmt->execute();
             log_activity('create_loan_product', "Tambah produk pinjaman: {$name}");
             flash('success', 'Produk pinjaman berhasil ditambahkan.');
@@ -102,6 +103,15 @@ require __DIR__ . '/../../includes/header.php';
                 <label for="max_amount">Jumlah Maksimum (Rp) *</label>
                 <input type="number" id="max_amount" name="max_amount" step="10000" min="0" value="<?= $product['max_amount'] ?? '20000000' ?>" required>
             </div>
+        </div>
+
+        <div class="form-group">
+            <label for="approval_levels">Tingkat Persetujuan *</label>
+            <select id="approval_levels" name="approval_levels" required>
+                <option value="1" <?= ($product['approval_levels'] ?? 1) == 1 ? 'selected' : '' ?>>Single Approval (1 Level)</option>
+                <option value="2" <?= ($product['approval_levels'] ?? 1) == 2 ? 'selected' : '' ?>>Dual Approval (2 Level)</option>
+            </select>
+            <small>Single: langsung approve. Dual: butuh 2 persetujuan (Admin + Super Admin)</small>
         </div>
 
         <div class="form-group">

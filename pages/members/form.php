@@ -30,7 +30,8 @@ if ($is_edit) {
         'email' => '',
         'address' => '',
         'join_date' => date('Y-m-d'),
-        'status' => 'active'
+        'status' => 'active',
+        'notification_preference' => 'email'
     ];
 }
 
@@ -45,14 +46,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $address = trim($_POST['address'] ?? '');
     $join_date = trim($_POST['join_date'] ?? '');
     $status = trim($_POST['status'] ?? 'active');
+    $notification_preference = trim($_POST['notification_preference'] ?? 'email');
 
     if (empty($full_name)) $errors[] = 'Nama lengkap wajib diisi.';
     if (empty($join_date)) $errors[] = 'Tanggal gabung wajib diisi.';
 
     if (empty($errors)) {
         if ($is_edit) {
-            $stmt = db()->prepare('UPDATE members SET full_name = ?, id_number = ?, phone = ?, email = ?, address = ?, join_date = ?, status = ? WHERE id = ?');
-            $stmt->bind_param('sssssssi', $full_name, $id_number, $phone, $email, $address, $join_date, $status, $id);
+            $stmt = db()->prepare('UPDATE members SET full_name = ?, id_number = ?, phone = ?, email = ?, address = ?, join_date = ?, status = ?, notification_preference = ? WHERE id = ?');
+            $stmt->bind_param('ssssssssi', $full_name, $id_number, $phone, $email, $address, $join_date, $status, $notification_preference, $id);
             $stmt->execute();
             log_activity('edit_member', "Mengubah data anggota ID {$id}");
             flash('success', 'Data anggota berhasil diperbarui.');
@@ -61,8 +63,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Generate member number atomically
             $member_number = generate_member_number();
 
-            $stmt = db()->prepare('INSERT INTO members (member_number, full_name, id_number, phone, email, address, join_date, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-            $stmt->bind_param('ssssssss', $member_number, $full_name, $id_number, $phone, $email, $address, $join_date, $status);
+            $stmt = db()->prepare('INSERT INTO members (member_number, full_name, id_number, phone, email, address, join_date, status, notification_preference) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            $stmt->bind_param('sssssssss', $member_number, $full_name, $id_number, $phone, $email, $address, $join_date, $status, $notification_preference);
             $stmt->execute();
             $new_id = db()->insert_id;
 
@@ -144,6 +146,17 @@ require __DIR__ . '/../../includes/header.php';
                     <option value="resigned" <?= $member['status'] === 'resigned' ? 'selected' : '' ?>>Keluar</option>
                 </select>
             </div>
+        </div>
+
+        <div class="form-group">
+            <label for="notification_preference">Preferensi Notifikasi</label>
+            <select id="notification_preference" name="notification_preference">
+                <option value="email" <?= ($member['notification_preference'] ?? 'email') === 'email' ? 'selected' : '' ?>>Email</option>
+                <option value="sms" <?= ($member['notification_preference'] ?? 'email') === 'sms' ? 'selected' : '' ?>>SMS</option>
+                <option value="both" <?= ($member['notification_preference'] ?? 'email') === 'both' ? 'selected' : '' ?>>Email & SMS</option>
+                <option value="none" <?= ($member['notification_preference'] ?? 'email') === 'none' ? 'selected' : '' ?>>Tidak Ada</option>
+            </select>
+            <small>Pilih cara notifikasi untuk pengingat angsuran dan informasi penting lainnya.</small>
         </div>
 
         <div class="form-actions">

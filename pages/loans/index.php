@@ -11,9 +11,10 @@ $title = 'Data Pinjaman';
 $search = trim($_GET['search'] ?? '');
 $status = trim($_GET['status'] ?? '');
 
-$sql = 'SELECT l.*, m.member_number, m.full_name
+$sql = 'SELECT l.*, m.member_number, m.full_name, lp.approval_levels
         FROM loans l
         JOIN members m ON l.member_id = m.id
+        LEFT JOIN loan_products lp ON l.loan_product_id = lp.id
         WHERE 1=1';
 $params = [];
 $types = '';
@@ -97,8 +98,30 @@ require __DIR__ . '/../../includes/header.php';
                         <td><?= rupiah($row['monthly_payment']) ?></td>
                         <td>
                             <?php
-                            $badge_class = ['approved' => 'success', 'active' => 'success', 'pending' => 'warning', 'completed' => 'info'][$row['status']] ?? 'danger';
-                            $status_label = ['pending' => 'Menunggu', 'approved' => 'Disetujui', 'active' => 'Aktif', 'completed' => 'Selesai/Lunas', 'rejected' => 'Ditolak', 'defaulted' => 'Macet'][$row['status']] ?? $row['status'];
+                            $status = $row['status'];
+                            $approval_levels = (int)($row['approval_levels'] ?? 1);
+                            $current_level = (int)$row['current_approval_level'];
+                            
+                            if ($status === 'pending') {
+                                if ($approval_levels === 2) {
+                                    if ($current_level === 0) {
+                                        $badge_class = 'warning';
+                                        $status_label = 'Pending L1';
+                                    } elseif ($current_level === 1) {
+                                        $badge_class = 'warning';
+                                        $status_label = 'Pending L2';
+                                    } else {
+                                        $badge_class = 'warning';
+                                        $status_label = 'Menunggu';
+                                    }
+                                } else {
+                                    $badge_class = 'warning';
+                                    $status_label = 'Menunggu';
+                                }
+                            } else {
+                                $badge_class = ['approved' => 'success', 'active' => 'success', 'completed' => 'info', 'rejected' => 'danger', 'defaulted' => 'danger'][$status] ?? 'warning';
+                                $status_label = ['approved' => 'Disetujui', 'active' => 'Aktif', 'completed' => 'Lunas', 'rejected' => 'Ditolak', 'defaulted' => 'Macet'][$status] ?? $status;
+                            }
                             ?>
                             <span class="badge badge-<?= $badge_class ?>"><?= $status_label ?></span>
                         </td>

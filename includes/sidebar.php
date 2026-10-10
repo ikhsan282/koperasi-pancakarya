@@ -10,10 +10,15 @@ $current_url = $_SERVER['REQUEST_URI'] ?? '';
     <nav>
         <a href="<?= url('pages/dashboard/index.php') ?>">▦ Dashboard</a>
         <?php if (can('members.view')): ?><a href="<?= url('pages/members/index.php') ?>">♙ Anggota</a><?php endif; ?>
-        <?php if (can('savings.view')): ?><a href="<?= url('pages/savings/index.php') ?>">◉ Simpanan</a><?php endif; ?>
+        <?php if (can('savings.view')): ?>
+            <a href="<?= url('pages/savings/index.php') ?>">◉ Simpanan</a>
+            <?php if (can('savings.post_interest')): ?><a href="<?= url('pages/savings/interest_posting.php') ?>" style="padding-left:2rem;font-size:0.9em">├ Posting Bunga</a><?php endif; ?>
+            <a href="<?= url('pages/savings/interest_history.php') ?>" style="padding-left:2rem;font-size:0.9em">└ Riwayat Bunga</a>
+        <?php endif; ?>
         <?php if (can('loans.view')): ?><a href="<?= url('pages/loans/index.php') ?>">◇ Pinjaman</a><?php endif; ?>
         <?php if (can('cashbank.view')): ?><a href="<?= url('pages/cashbank/accounts.php') ?>">💰 Kas & Bank</a><?php endif; ?>
         <?php if (can('loans.send_reminder')): ?><a href="<?= url('pages/loans/reminders.php') ?>">📧 Pengingat</a><?php endif; ?>
+        <?php if (can('notifications.view')): ?><a href="<?= url('pages/notifications/index.php') ?>">🔔 Notifikasi</a><?php endif; ?>
         <?php if (can('reports.view')): ?><a href="<?= url('pages/reports/index.php') ?>">▤ Laporan</a><?php endif; ?>
         <?php if (can('shu.view')): ?><a href="<?= url('pages/shu/index.php') ?>">% SHU</a><?php endif; ?>
         <?php if (can('settings.manage')): ?><a href="<?= url('pages/settings/index.php') ?>">⚙ Pengaturan</a><?php endif; ?>

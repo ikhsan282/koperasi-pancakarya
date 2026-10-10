@@ -48,13 +48,89 @@ if ($action === 'approve') {
         }
     }
 
-    $uid = current_user()['id'];
-    $stmt = db()->prepare('UPDATE loans SET status = "approved", approval_date = NOW(), approved_by = ?, rejection_notes = NULL WHERE id = ? AND status = "pending"');
-    $stmt->bind_param('ii', $uid, $id);
-    $stmt->execute();
+    // Get loan product approval configuration
+    $product_id = (int) $loan['loan_product_id'];
+    $approval_levels = 1; // default single approval
+    if ($product_id > 0) {
+        $p_stmt = db()->prepare('SELECT approval_levels FROM loan_products WHERE id = ?');
+        $p_stmt->bind_param('i', $product_id);
+        $p_stmt->execute();
+        $product = $p_stmt->get_result()->fetch_assoc();
+        if ($product) {
+            $approval_levels = (int) $product['approval_levels'];
+        }
+    }
 
-    log_activity('approve_loan', "Menyetujui pinjaman {$loan['loan_number']}");
-    flash('success', 'Pinjaman telah disetujui. Silakan lanjutkan pencairan dana.');
+    $uid = current_user()['id'];
+    $current_level = (int) $loan['current_approval_level'];
+    $notes = trim($_POST['approval_notes'] ?? '');
+
+    $db = db();
+    $db->begin_transaction();
+    try {
+        if ($approval_levels === 1) {
+            // Single approval: approve directly
+            if (!can('loans.approve')) {
+                throw new Exception('Anda tidak memiliki izin untuk menyetujui pinjaman.');
+            }
+            
+            $stmt = $db->prepare('UPDATE loans SET status = "approved", approval_date = NOW(), approved_by = ?, current_approval_level = 1, rejection_notes = NULL WHERE id = ?');
+            $stmt->bind_param('ii', $uid, $id);
+            $stmt->execute();
+
+            // Record approval
+            $ins = $db->prepare('INSERT INTO loan_approvals (loan_id, approver_level, approver_id, status, notes) VALUES (?, 1, ?, "approved", ?)');
+            $ins->bind_param('iis', $id, $uid, $notes);
+            $ins->execute();
+
+            log_activity('approve_loan', "Menyetujui pinjaman {$loan['loan_number']} (single approval)");
+            flash('success', 'Pinjaman telah disetujui. Silakan lanjutkan pencairan dana.');
+        } else {
+            // Dual approval workflow
+            if ($current_level === 0) {
+                // First approval (Admin)
+                if (!can('loans.approve')) {
+                    throw new Exception('Anda tidak memiliki izin untuk menyetujui pinjaman level 1.');
+                }
+                
+                $stmt = $db->prepare('UPDATE loans SET current_approval_level = 1 WHERE id = ?');
+                $stmt->bind_param('i', $id);
+                $stmt->execute();
+
+                // Record first approval
+                $ins = $db->prepare('INSERT INTO loan_approvals (loan_id, approver_level, approver_id, status, notes) VALUES (?, 1, ?, "approved", ?)');
+                $ins->bind_param('iis', $id, $uid, $notes);
+                $ins->execute();
+
+                log_activity('approve_loan_level1', "Menyetujui pinjaman {$loan['loan_number']} - Level 1");
+                flash('success', 'Pinjaman telah disetujui Level 1. Menunggu persetujuan Level 2 (Super Admin).');
+            } elseif ($current_level === 1) {
+                // Final approval (Super Admin)
+                if (!can('loans.approve_final')) {
+                    throw new Exception('Anda tidak memiliki izin untuk menyetujui pinjaman level 2 (final).');
+                }
+                
+                $stmt = $db->prepare('UPDATE loans SET status = "approved", approval_date = NOW(), approved_by = ?, current_approval_level = 2, rejection_notes = NULL WHERE id = ?');
+                $stmt->bind_param('ii', $uid, $id);
+                $stmt->execute();
+
+                // Record final approval
+                $ins = $db->prepare('INSERT INTO loan_approvals (loan_id, approver_level, approver_id, status, notes) VALUES (?, 2, ?, "approved", ?)');
+                $ins->bind_param('iis', $id, $uid, $notes);
+                $ins->execute();
+
+                log_activity('approve_loan_level2', "Menyetujui pinjaman {$loan['loan_number']} - Level 2 (Final)");
+                flash('success', 'Pinjaman telah disetujui Level 2 (Final). Silakan lanjutkan pencairan dana.');
+            } else {
+                throw new Exception('Status approval tidak valid.');
+            }
+        }
+        
+        $db->commit();
+    } catch (Throwable $e) {
+        $db->rollback();
+        flash('error', 'Gagal menyetujui pinjaman: ' . $e->getMessage());
+    }
     redirect('pages/loans/detail.php?id=' . $id);
 }
 
