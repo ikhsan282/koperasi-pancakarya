@@ -40,6 +40,13 @@ require __DIR__ . '/../../includes/header.php';
             <div class="stat-value">Neraca</div>
         </div>
     </div>
+    <div class="stat-card">
+        <div class="stat-icon">◈</div>
+        <div class="stat-info">
+            <div class="stat-label">Laporan Laba Rugi</div>
+            <div class="stat-value">SAK EP</div>
+        </div>
+    </div>
 </div>
 
 <div class="card">
@@ -68,10 +75,10 @@ require __DIR__ . '/../../includes/header.php';
                 </td>
             </tr>
             <tr>
-                <td><strong>Laporan Arus Kas</strong></td>
-                <td>Pemasukan (setoran + angsuran) vs pengeluaran (penarikan + pencairan) per bulan</td>
+                <td><strong>Laporan Arus Kas (Cash Flow Statement)</strong></td>
+                <td>Arus kas operasional berbasis transaksi kas/bank dengan breakdown per akun dan periode fleksibel</td>
                 <td>
-                    <a href="<?= url('pages/reports/cashflow.php') ?>" class="btn btn-sm btn-primary">Lihat</a>
+                    <a href="<?= url('pages/reports/cashflow_statement.php') ?>" class="btn btn-sm btn-primary">Lihat</a>
                 </td>
             </tr>
             <tr>
@@ -79,6 +86,13 @@ require __DIR__ . '/../../includes/header.php';
                 <td>Neraca koperasi: aset, kewajiban, dan ekuitas per tahun</td>
                 <td>
                     <a href="<?= url('pages/reports/financial_position.php') ?>" class="btn btn-sm btn-primary">Lihat</a>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Laporan Laba Rugi</strong></td>
+                <td>Pendapatan, beban, dan laba bersih koperasi per periode (SAK EP)</td>
+                <td>
+                    <a href="<?= url('pages/reports/income_statement.php') ?>" class="btn btn-sm btn-primary">Lihat</a>
                 </td>
             </tr>
         </tbody>
