@@ -104,8 +104,11 @@ CREATE TABLE `users` (
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `users` (`username`, `email`, `password`, `full_name`, `role_id`) VALUES
-('admin', 'admin@koperasi.test', '$2y$12$oucBlvl6RGkxgjQ0iAF2IehCiJI2tn9epJCvpnW/A0BBFcRKnbTfu', 'Administrator', 1);
+INSERT INTO `users` (`username`, `email`, `password`, `full_name`, `role_id`, `is_active`) VALUES
+('superadmin', 'superadmin@koperasi.test', '$2y$12$oucBlvl6RGkxgjQ0iAF2IehCiJI2tn9epJCvpnW/A0BBFcRKnbTfu', 'Super Administrator', 1, 1),
+('admin', 'admin@koperasi.test', '$2y$12$oucBlvl6RGkxgjQ0iAF2IehCiJI2tn9epJCvpnW/A0BBFcRKnbTfu', 'Administrator', 2, 1),
+('bendahara', 'bendahara@koperasi.test', '$2y$12$oucBlvl6RGkxgjQ0iAF2IehCiJI2tn9epJCvpnW/A0BBFcRKnbTfu', 'Bendahara Koperasi', 3, 1),
+('anggota', 'anggota@koperasi.test', '$2y$12$oucBlvl6RGkxgjQ0iAF2IehCiJI2tn9epJCvpnW/A0BBFcRKnbTfu', 'Anggota Contoh', 4, 1);
 
 -- Members table
 CREATE TABLE `members` (
