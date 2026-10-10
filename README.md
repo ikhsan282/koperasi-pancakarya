@@ -57,7 +57,7 @@ mysql -u root -p koperasi_pancakarya < database/schema.sql
 Edit `config/config.php` sesuai environment Anda:
 
 ```php
-const APP_URL = 'http://localhost/koperasi-pancakarya';
+const APP_URL = 'http://localhost:8080/koperasi-pancakarya';
 const DB_HOST = 'localhost';
 const DB_NAME = 'koperasi_pancakarya';
 const DB_USER = 'root';
@@ -73,7 +73,7 @@ chmod -R 755 uploads/
 
 ### 5. Akses Aplikasi
 
-Buka browser: `http://localhost/koperasi-pancakarya`
+Buka browser: `http://localhost:8080/koperasi-pancakarya`
 
 **Login Default:**
 - Username: `admin`

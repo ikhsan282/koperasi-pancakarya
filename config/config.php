@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 const APP_NAME = 'Koperasi Pancakarya';
-const APP_URL = 'http://localhost/koperasi-pancakarya';
+const APP_URL = 'http://localhost:8080/koperasi-pancakarya';
 const DB_HOST = 'localhost';
 const DB_NAME = 'koperasi_pancakarya';
 const DB_USER = 'root';
