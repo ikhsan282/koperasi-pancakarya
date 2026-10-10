@@ -53,3 +53,42 @@ function validate_loan_simulation(array $product, float $amount, int $tenor): ar
 
     return $errors;
 }
+
+/**
+ * Calculate penalty for late payment.
+ * 
+ * @return array{penalty_amount: float, days_overdue: int}
+ */
+function calculate_penalty(string $due_date, string $payment_date, float $amount_due): array
+{
+    $due = new DateTime($due_date);
+    $paid = new DateTime($payment_date);
+    $days_overdue = max(0, $paid->diff($due)->days * ($paid > $due ? 1 : 0));
+    
+    if ($days_overdue === 0) {
+        return ['penalty_amount' => 0.0, 'days_overdue' => 0];
+    }
+    
+    $stmt = db()->prepare('SELECT value FROM settings WHERE `key` = ?');
+    $key = 'penalty_rate_per_day';
+    $stmt->bind_param('s', $key);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $penalty_rate = $result ? (float) $result['value'] : 0.5;
+    
+    $penalty_amount = round($days_overdue * ($penalty_rate / 100) * $amount_due, 2);
+    
+    return ['penalty_amount' => $penalty_amount, 'days_overdue' => $days_overdue];
+}
+
+/**
+ * Get setting value with fallback.
+ */
+function get_setting(string $key, string $default = ''): string
+{
+    $stmt = db()->prepare('SELECT value FROM settings WHERE `key` = ?');
+    $stmt->bind_param('s', $key);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    return $result ? $result['value'] : $default;
+}

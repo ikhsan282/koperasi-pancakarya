@@ -43,15 +43,26 @@ while ($p = $payments->fetch_assoc()) {
     }
 }
 
+// Fetch collaterals
+$c_stmt = db()->prepare('SELECT COUNT(*) as total FROM loan_collaterals WHERE loan_id = ?');
+$c_stmt->bind_param('i', $id);
+$c_stmt->execute();
+$collateral_count = $c_stmt->get_result()->fetch_assoc()['total'];
+
 $title = 'Detail Pinjaman - ' . $loan['loan_number'];
 require __DIR__ . '/../../includes/header.php';
 ?>
 
-<div class="page-actions" style="margin-bottom: 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
+<div class="page-actions" style="margin-bottom: 1.5rem; display: flex; gap: 0.5rem; justify-content: space-between;">
     <a href="<?= url('pages/loans/index.php') ?>" class="btn btn-secondary">Kembali ke Daftar</a>
-    <?php if (in_array($loan['status'], ['active', 'completed', 'paid'])): ?>
-        <a href="<?= url('pages/loans/print.php?id=' . $loan['id']) ?>" target="_blank" class="btn btn-primary">🖨 Cetak Kwitansi/Ringkasan</a>
-    <?php endif; ?>
+    <div style="display: flex; gap: 0.5rem;">
+        <?php if (can('collateral.view')): ?>
+            <a href="<?= url('pages/collateral/index.php?loan_id=' . $loan['id']) ?>" class="btn btn-secondary">📦 Agunan (<?= $collateral_count ?>)</a>
+        <?php endif; ?>
+        <?php if (in_array($loan['status'], ['active', 'completed', 'paid'])): ?>
+            <a href="<?= url('pages/loans/print.php?id=' . $loan['id']) ?>" target="_blank" class="btn btn-primary">🖨 Cetak Kwitansi/Ringkasan</a>
+        <?php endif; ?>
+    </div>
 </div>
 
 <div class="card" style="margin-bottom: 1.5rem;">
@@ -84,6 +95,9 @@ require __DIR__ . '/../../includes/header.php';
             <table class="table-info" style="width: 100%;">
                 <tr><th style="width: 40%;">Produk</th><td><?= e($loan['product_name'] ?? 'Umum') ?></td></tr>
                 <tr><th>Pokok Pinjaman</th><td><strong><?= rupiah($loan['amount']) ?></strong></td></tr>
+                <?php if (!empty($loan['admin_fee_pct']) && $loan['admin_fee_pct'] > 0): ?>
+                <tr><th>Biaya Admin</th><td><?= rupiah($loan['admin_fee_amount']) ?> (<?= $loan['admin_fee_pct'] ?>%)</td></tr>
+                <?php endif; ?>
                 <tr><th>Bunga / Bulan</th><td><?= $loan['interest_rate'] ?>% (Flat)</td></tr>
                 <tr><th>Tenor</th><td><?= $loan['term_months'] ?> Bulan</td></tr>
                 <tr><th>Angsuran / Bulan</th><td><strong style="color: #2b6cb0;"><?= rupiah($loan['monthly_payment']) ?></strong></td></tr>
@@ -109,6 +123,12 @@ require __DIR__ . '/../../includes/header.php';
 <?php if ($loan['status'] === 'pending' && can('loans.approve')): ?>
     <div class="card" style="margin-bottom: 1.5rem; background: #faf5ff; border: 1px solid #d6bcfa;">
         <h4 style="margin-top: 0; color: #553c9e;">Persetujuan / Penolakan Pinjaman</h4>
+        <?php if ($loan['amount'] >= 5000000 && $collateral_count === 0): ?>
+            <div class="alert warning" style="margin-bottom: 1rem;">
+                <strong>⚠ Agunan Wajib:</strong> Pinjaman ≥ Rp 5.000.000 wajib memiliki minimal 1 agunan sebelum dapat disetujui.
+                <a href="<?= url('pages/collateral/index.php?loan_id=' . $loan['id']) ?>" style="text-decoration: underline;">Tambah agunan sekarang →</a>
+            </div>
+        <?php endif; ?>
         <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
             <form method="post" action="<?= url('pages/loans/process.php?id=' . $loan['id']) ?>" style="display: inline;">
                 <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
@@ -144,6 +164,19 @@ require __DIR__ . '/../../includes/header.php';
                 <label for="disbursement_date" style="font-weight: 600;">Tanggal Pencairan *</label>
                 <input type="date" id="disbursement_date" name="disbursement_date" value="<?= date('Y-m-d') ?>" required style="padding: 0.4rem 0.6rem;">
             </div>
+            <?php if (can('cashbank.manage')): ?>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="cashbank_account_id" style="font-weight: 600;">Akun Kas/Bank</label>
+                <select id="cashbank_account_id" name="cashbank_account_id" style="padding: 0.4rem 0.6rem;">
+                    <option value="">-- Tidak dicatat --</option>
+                    <?php
+                    $cb_accounts = db()->query('SELECT id, account_name, balance FROM cash_bank_accounts WHERE is_active = 1 ORDER BY account_name');
+                    while ($cba = $cb_accounts->fetch_assoc()): ?>
+                        <option value="<?= $cba['id'] ?>"><?= e($cba['account_name']) ?> (<?= rupiah($cba['balance']) ?>)</option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+            <?php endif; ?>
             <button type="submit" class="btn btn-primary" onclick="return confirm('Cairkan dana dan buat jadwal angsuran sekarang?')">Cairkan Dana & Buat Jadwal</button>
         </form>
     </div>
@@ -161,6 +194,7 @@ require __DIR__ . '/../../includes/header.php';
                 <th>Jatuh Tempo</th>
                 <th>Pokok</th>
                 <th>Bunga</th>
+                <th>Denda</th>
                 <th>Total Tagihan</th>
                 <th>Tgl Bayar</th>
                 <th>Jumlah Bayar</th>
@@ -172,7 +206,7 @@ require __DIR__ . '/../../includes/header.php';
         </thead>
         <tbody>
             <?php if (empty($all_payments)): ?>
-                <tr><td colspan="<?= (can('loans.edit') && $loan['status'] === 'active') ? 9 : 8 ?>" class="text-center">Jadwal angsuran akan digenerate otomatis setelah pinjaman dicairkan (status disburse).</td></tr>
+                <tr><td colspan="<?= (can('loans.edit') && $loan['status'] === 'active') ? 10 : 9 ?>" class="text-center">Jadwal angsuran akan digenerate otomatis setelah pinjaman dicairkan (status disburse).</td></tr>
             <?php else: ?>
                 <?php foreach ($all_payments as $p): ?>
                     <?php
@@ -186,6 +220,7 @@ require __DIR__ . '/../../includes/header.php';
                         <td><?= !empty($p['due_date']) ? date('d/m/Y', strtotime($p['due_date'])) : '-' ?></td>
                         <td><?= rupiah($p['principal_amount']) ?></td>
                         <td><?= rupiah($p['interest_amount']) ?></td>
+                        <td><?= $p['penalty_amount'] > 0 ? rupiah($p['penalty_amount']) : '-' ?></td>
                         <td><strong><?= rupiah($p['amount_due'] > 0 ? $p['amount_due'] : $p['amount']) ?></strong></td>
                         <td><?= !empty($p['payment_date']) ? date('d/m/Y', strtotime($p['payment_date'])) : '-' ?></td>
                         <td><?= $p['amount_paid'] > 0 ? rupiah($p['amount_paid']) : ($p['status'] === 'paid' ? rupiah($p['amount']) : '-') ?></td>

@@ -133,6 +133,13 @@ while ($row = $res->fetch_assoc()) {
 }
 $total_savings = array_sum(array_column($savings_by_type, 'total'));
 
+// Total kas & bank balance
+$cashbank_balance = 0;
+if (can('cashbank.view')) {
+    $stmt = db()->query('SELECT COALESCE(SUM(balance), 0) AS total FROM cash_bank_accounts WHERE is_active = 1');
+    $cashbank_balance = (float) $stmt->fetch_assoc()['total'];
+}
+
 // Total pinjaman aktif (outstanding pokok)
 $stmt = db()->query('SELECT COALESCE(SUM(l.amount - COALESCE((SELECT SUM(principal_amount) FROM loan_payments lp WHERE lp.loan_id = l.id),0)),0) AS total
                      FROM loans l WHERE l.status = "active"');
@@ -200,6 +207,15 @@ require __DIR__ . '/../../includes/header.php';
             <div class="stat-value"><?= rupiah($outstanding_loans) ?></div>
         </div>
     </div>
+    <?php if (can('cashbank.view')): ?>
+    <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-info">
+            <div class="stat-label">Kas & Bank</div>
+            <div class="stat-value"><?= rupiah($cashbank_balance) ?></div>
+        </div>
+    </div>
+    <?php endif; ?>
     <div class="stat-card">
         <div class="stat-icon">▤</div>
         <div class="stat-info">

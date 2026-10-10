@@ -35,6 +35,19 @@ if ($action === 'approve') {
         redirect('pages/loans/detail.php?id=' . $id);
     }
 
+    // Validate collateral requirement for loans ≥ Rp 5,000,000
+    if ((float) $loan['amount'] >= 5000000) {
+        $c_stmt = db()->prepare('SELECT COUNT(*) as total FROM loan_collaterals WHERE loan_id = ?');
+        $c_stmt->bind_param('i', $id);
+        $c_stmt->execute();
+        $collateral_count = $c_stmt->get_result()->fetch_assoc()['total'];
+        
+        if ($collateral_count === 0) {
+            flash('error', 'Pinjaman ≥ Rp 5.000.000 wajib memiliki minimal 1 agunan sebelum dapat disetujui.');
+            redirect('pages/loans/detail.php?id=' . $id);
+        }
+    }
+
     $uid = current_user()['id'];
     $stmt = db()->prepare('UPDATE loans SET status = "approved", approval_date = NOW(), approved_by = ?, rejection_notes = NULL WHERE id = ? AND status = "pending"');
     $stmt->bind_param('ii', $uid, $id);
@@ -74,6 +87,8 @@ if ($action === 'disburse') {
     }
 
     $disbursement_date = trim($_POST['disbursement_date'] ?? '');
+    $cashbank_account_id = (int) ($_POST['cashbank_account_id'] ?? 0);
+    
     $date_obj = DateTime::createFromFormat('Y-m-d', $disbursement_date);
     if (!$date_obj || $date_obj->format('Y-m-d') !== $disbursement_date) {
         flash('error', 'Tanggal pencairan tidak valid.');
@@ -92,6 +107,8 @@ if ($action === 'disburse') {
         redirect('pages/loans/detail.php?id=' . $id);
     }
 
+    require_once __DIR__ . '/../../includes/cashbank_helpers.php';
+    
     $db = db();
     $db->begin_transaction();
     try {
@@ -118,6 +135,19 @@ if ($action === 'disburse') {
 
             $ins->bind_param('isddddi', $id, $due_date, $principal, $interest_per_month, $amount_due, $balance_remaining, $i);
             $ins->execute();
+        }
+        
+        // Auto-post to cash/bank (credit = uang keluar)
+        if ($cashbank_account_id > 0) {
+            post_cashbank_transaction(
+                $cashbank_account_id,
+                'credit',
+                $amount,
+                'loan_disbursement',
+                $id,
+                "Pencairan pinjaman {$loan['loan_number']} - {$loan['member_name']}",
+                $disbursement_date
+            );
         }
 
         $db->commit();
