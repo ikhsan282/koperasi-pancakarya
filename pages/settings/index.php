@@ -29,6 +29,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $wa_enabled = isset($_POST['whatsapp_enabled']) ? '1' : '0';
     $wa_api_url = trim($_POST['whatsapp_api_url'] ?? '');
     $wa_api_key = trim($_POST['whatsapp_api_key'] ?? '');
+    
+    // Backup settings
+    $backup_path = trim($_POST['backup_path'] ?? '/opt/data/backups');
+    $backup_retention = (int) ($_POST['backup_retention_days'] ?? 30);
+    $auto_backup = isset($_POST['auto_backup_enabled']) ? '1' : '0';
 
     // Validation
     if ($penalty_rate < 0 || $penalty_rate > 100) $errors[] = 'Denda per hari harus antara 0-100%.';
@@ -38,6 +43,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($wa_enabled === '1' && (empty($wa_api_url) || empty($wa_api_key))) {
         $errors[] = 'API URL dan API Key wajib diisi jika WhatsApp diaktifkan.';
     }
+    
+    if (empty($backup_path)) $errors[] = 'Path backup tidak boleh kosong.';
+    if ($backup_retention < 1 || $backup_retention > 365) $errors[] = 'Retensi backup harus antara 1-365 hari.';
 
     if (empty($errors)) {
         $db = db();
@@ -45,33 +53,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmt = $db->prepare('UPDATE settings SET `value` = ? WHERE `key` = ?');
             
-            $key = 'penalty_rate_per_day';
-            $val = (string) $penalty_rate;
-            $stmt->bind_param('ss', $val, $key);
-            $stmt->execute();
+            $updates = [
+                'penalty_rate_per_day' => (string) $penalty_rate,
+                'default_admin_fee_pct' => (string) $admin_fee,
+                'min_collateral_loan_amount' => (string) $min_collateral,
+                'whatsapp_enabled' => $wa_enabled,
+                'whatsapp_api_url' => $wa_api_url,
+                'whatsapp_api_key' => $wa_api_key,
+                'backup_path' => $backup_path,
+                'backup_retention_days' => (string) $backup_retention,
+                'auto_backup_enabled' => $auto_backup,
+            ];
             
-            $key = 'default_admin_fee_pct';
-            $val = (string) $admin_fee;
-            $stmt->bind_param('ss', $val, $key);
-            $stmt->execute();
-            
-            $key = 'min_collateral_loan_amount';
-            $val = (string) $min_collateral;
-            $stmt->bind_param('ss', $val, $key);
-            $stmt->execute();
-            
-            // WhatsApp settings
-            $key = 'whatsapp_enabled';
-            $stmt->bind_param('ss', $wa_enabled, $key);
-            $stmt->execute();
-            
-            $key = 'whatsapp_api_url';
-            $stmt->bind_param('ss', $wa_api_url, $key);
-            $stmt->execute();
-            
-            $key = 'whatsapp_api_key';
-            $stmt->bind_param('ss', $wa_api_key, $key);
-            $stmt->execute();
+            foreach ($updates as $key => $val) {
+                $stmt->bind_param('ss', $val, $key);
+                $stmt->execute();
+            }
             
             $db->commit();
             log_activity('update_settings', 'Memperbarui pengaturan sistem');
@@ -93,12 +90,16 @@ require __DIR__ . '/../../includes/header.php';
     </div>
 <?php endif; ?>
 
-<div class="card" style="max-width: 800px; margin: 0 auto;">
+<div class="card" style="max-width: 900px; margin: 0 auto;">
     <h3>Pengaturan Sistem</h3>
     <p style="color: #718096; margin-bottom: 1.5rem;">Kelola parameter operasional koperasi. Hanya Super Admin yang dapat mengubah pengaturan ini.</p>
 
     <form method="post" class="form">
         <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+
+        <h4 style="margin: 1.5rem 0 1rem 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">
+            Pengaturan Pinjaman
+        </h4>
 
         <div class="form-group">
             <label for="penalty_rate_per_day">Denda Keterlambatan (% per hari) *</label>
@@ -129,9 +130,9 @@ require __DIR__ . '/../../includes/header.php';
             </small>
         </div>
 
-        <hr style="margin: 2rem 0; border: none; border-top: 1px solid #e2e8f0;">
-
-        <h4 style="margin-bottom: 1rem;">Integrasi WhatsApp</h4>
+        <h4 style="margin: 2rem 0 1rem 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">
+            Integrasi WhatsApp
+        </h4>
         <p style="color: #718096; margin-bottom: 1rem; font-size: 0.875rem;">
             Konfigurasi gateway WhatsApp untuk notifikasi otomatis (mendukung Fonnte, Wablas, dll).
         </p>
@@ -142,9 +143,6 @@ require __DIR__ . '/../../includes/header.php';
                        <?= (($_POST['whatsapp_enabled'] ?? $settings['whatsapp_enabled']['value'] ?? '0') === '1') ? 'checked' : '' ?>>
                 <span style="margin-left: 0.5rem;">Aktifkan Notifikasi WhatsApp</span>
             </label>
-            <small style="display: block; margin-top: 0.25rem; color: #718096;">
-                Centang untuk mengaktifkan pengiriman notifikasi via WhatsApp
-            </small>
         </div>
 
         <div class="form-group">
@@ -162,6 +160,42 @@ require __DIR__ . '/../../includes/header.php';
                    value="<?= e($_POST['whatsapp_api_key'] ?? $settings['whatsapp_api_key']['value'] ?? '') ?>">
             <small style="display: block; margin-top: 0.25rem; color: #718096;">
                 Token autentikasi dari provider WhatsApp gateway
+            </small>
+        </div>
+
+        <h4 style="margin: 2rem 0 1rem 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">
+            Backup & Restore
+        </h4>
+        <p style="color: #718096; margin-bottom: 1rem; font-size: 0.875rem;">
+            Konfigurasi backup otomatis database. Lihat <a href="<?= url('pages/backup/index.php') ?>" style="color: #3182ce;">Kelola Backup</a> untuk backup manual.
+        </p>
+
+        <div class="form-group">
+            <label for="backup_path">Lokasi Penyimpanan Backup *</label>
+            <input type="text" id="backup_path" name="backup_path" 
+                   value="<?= e($_POST['backup_path'] ?? $settings['backup_path']['value'] ?? '/opt/data/backups') ?>" required>
+            <small style="display: block; margin-top: 0.25rem; color: #718096;">
+                Path direktori untuk menyimpan file backup. Pastikan direktori dapat ditulis oleh web server.
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label for="backup_retention_days">Retensi Backup (hari) *</label>
+            <input type="number" id="backup_retention_days" name="backup_retention_days" min="1" max="365" 
+                   value="<?= e($_POST['backup_retention_days'] ?? $settings['backup_retention_days']['value'] ?? '30') ?>" required>
+            <small style="display: block; margin-top: 0.25rem; color: #718096;">
+                Backup yang lebih lama dari nilai ini akan dihapus otomatis (1-365 hari).
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="auto_backup_enabled" name="auto_backup_enabled" value="1"
+                       <?= (($_POST['auto_backup_enabled'] ?? $settings['auto_backup_enabled']['value'] ?? '0') === '1') ? 'checked' : '' ?>>
+                <span style="margin-left: 0.5rem;">Aktifkan Backup Otomatis Harian</span>
+            </label>
+            <small style="display: block; margin-top: 0.25rem; color: #718096;">
+                Jalankan cron: <code>0 2 * * * php <?= realpath(__DIR__ . '/../../cron/daily_backup.php') ?></code>
             </small>
         </div>
 

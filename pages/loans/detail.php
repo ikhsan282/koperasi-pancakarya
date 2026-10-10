@@ -65,6 +65,12 @@ require __DIR__ . '/../../includes/header.php';
         <?php if (can('collateral.view')): ?>
             <a href="<?= url('pages/collateral/index.php?loan_id=' . $loan['id']) ?>" class="btn btn-secondary">📦 Agunan (<?= $collateral_count ?>)</a>
         <?php endif; ?>
+        <?php if (can('loans.restructure') && in_array($loan['status'], ['active', 'completed'])): ?>
+            <a href="<?= url('pages/loans/restructure.php?id=' . $loan['id']) ?>" class="btn btn-warning" style="background: #f59e0b; border-color: #f59e0b;">🔄 Restrukturisasi</a>
+        <?php endif; ?>
+        <?php if (can('loans.writeoff') && in_array($loan['status'], ['active', 'defaulted']) && $loan['writeoff_status'] === 'none'): ?>
+            <a href="<?= url('pages/loans/writeoff.php?id=' . $loan['id']) ?>" class="btn btn-danger">📝 Hapus Buku</a>
+        <?php endif; ?>
         <?php if (in_array($loan['status'], ['active', 'completed', 'paid'])): ?>
             <a href="<?= url('pages/loans/print.php?id=' . $loan['id']) ?>" target="_blank" class="btn btn-primary">🖨 Cetak Kwitansi/Ringkasan</a>
         <?php endif; ?>
@@ -118,6 +124,12 @@ require __DIR__ . '/../../includes/header.php';
                 <tr><th>Disetujui Oleh</th><td><?= e($loan['approver_name'] ?? '-') ?></td></tr>
                 <tr><th>Total Terbayar</th><td><?= rupiah($total_paid) ?></td></tr>
                 <tr><th>Progres Angsuran</th><td><?= $paid_count ?> dari <?= count($all_payments) ?> cicilan</td></tr>
+                <?php if ($loan['writeoff_status'] !== 'none'): ?>
+                    <tr><th>Status Writeoff</th><td>
+                        <span class="badge badge-danger"><?= $loan['writeoff_status'] === 'full' ? 'Full Writeoff' : 'Partial Writeoff' ?></span>
+                    </td></tr>
+                    <tr><th>Jumlah Writeoff</th><td><strong style="color: #c53030;"><?= rupiah($loan['writeoff_amount']) ?></strong></td></tr>
+                <?php endif; ?>
                 <?php if ($loan['rejection_notes']): ?>
                     <tr><th>Catatan Penolakan</th><td style="color: #c53030;"><?= e($loan['rejection_notes']) ?></td></tr>
                 <?php endif; ?>
@@ -280,6 +292,73 @@ if ($loan['status'] === 'pending') {
             <button type="submit" class="btn btn-primary" onclick="return confirm('Cairkan dana dan buat jadwal angsuran sekarang?')">Cairkan Dana & Buat Jadwal</button>
         </form>
     </div>
+<?php endif; ?>
+
+<?php
+// Fetch restructure history
+$r_stmt = db()->prepare('SELECT r.*, u.full_name AS approver_name 
+                         FROM loan_restructures r 
+                         LEFT JOIN users u ON r.approved_by = u.id 
+                         WHERE r.loan_id = ? 
+                         ORDER BY r.created_at DESC');
+$r_stmt->bind_param('i', $id);
+$r_stmt->execute();
+$restructures = $r_stmt->get_result();
+?>
+
+<?php if ($restructures->num_rows > 0): ?>
+<div class="card" style="margin-bottom: 1.5rem;">
+    <h3 style="margin-top: 0; color: #d97706;">🔄 Riwayat Restrukturisasi</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Tanggal</th>
+                <th>Jenis</th>
+                <th>Perubahan</th>
+                <th>Alasan</th>
+                <th>Status</th>
+                <th>Approver</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php while ($rst = $restructures->fetch_assoc()): ?>
+                <?php
+                $type_labels = [
+                    'reschedule' => 'Reschedule',
+                    'extend_tenor' => 'Perpanjang Tenor',
+                    'reduce_rate' => 'Kurangi Bunga'
+                ];
+                $badge = ['pending' => 'warning', 'approved' => 'success', 'rejected' => 'danger'][$rst['status']] ?? 'secondary';
+                $status_label = ['pending' => 'Menunggu', 'approved' => 'Disetujui', 'rejected' => 'Ditolak'][$rst['status']] ?? $rst['status'];
+                ?>
+                <tr>
+                    <td><?= date('d/m/Y H:i', strtotime($rst['created_at'])) ?></td>
+                    <td><strong><?= e($type_labels[$rst['restructure_type']] ?? $rst['restructure_type']) ?></strong></td>
+                    <td style="font-size: 0.9em;">
+                        <?php if ($rst['old_term_months'] != $rst['new_term_months']): ?>
+                            Tenor: <?= $rst['old_term_months'] ?> → <strong><?= $rst['new_term_months'] ?></strong> bulan<br>
+                        <?php endif; ?>
+                        <?php if ($rst['old_interest_rate'] != $rst['new_interest_rate']): ?>
+                            Bunga: <?= $rst['old_interest_rate'] ?>% → <strong><?= $rst['new_interest_rate'] ?>%</strong><br>
+                        <?php endif; ?>
+                        Angsuran: <?= rupiah($rst['old_monthly_payment']) ?> → <strong style="color: #059669;"><?= rupiah($rst['new_monthly_payment']) ?></strong>
+                    </td>
+                    <td style="max-width: 250px; font-size: 0.9em;"><?= e(mb_substr($rst['reason'], 0, 80)) ?><?= mb_strlen($rst['reason']) > 80 ? '...' : '' ?></td>
+                    <td><span class="badge badge-<?= $badge ?>"><?= $status_label ?></span></td>
+                    <td style="font-size: 0.9em;"><?= e($rst['approver_name'] ?? '-') ?></td>
+                    <td>
+                        <?php if ($rst['status'] === 'pending' && can('loans.restructure')): ?>
+                            <a href="<?= url('pages/loans/restructure_approve.php?id=' . $rst['id']) ?>" class="btn btn-sm btn-primary">Review</a>
+                        <?php else: ?>
+                            <span style="color: #9ca3af; font-size: 0.85rem;">—</span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endwhile; ?>
+        </tbody>
+    </table>
+</div>
 <?php endif; ?>
 
 <div class="card">
