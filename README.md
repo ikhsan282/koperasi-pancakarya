@@ -76,8 +76,13 @@ chmod -R 755 uploads/
 Buka browser: `http://localhost:8080/koperasi-pancakarya`
 
 **Login Default:**
-- Username: `admin`
-- Password: `P@ssw0rd`
+
+| Username | Password | Role | Email |
+|----------|----------|------|-------|
+| superadmin | P@ssw0rd | Super Admin | superadmin@koperasi.test |
+| admin | P@ssw0rd | Admin | admin@koperasi.test |
+| bendahara | P@ssw0rd | Bendahara | bendahara@koperasi.test |
+| anggota | P@ssw0rd | Anggota | anggota@koperasi.test |
 
 ## Struktur Direktori
 
