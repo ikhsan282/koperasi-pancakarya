@@ -10,7 +10,7 @@ Sistem Manajemen Koperasi - PHP Native dengan MySQLi
 - **Simulasi Pinjaman**: Kalkulator angsuran untuk anggota sebelum mengajukan
 - **Buku Tabungan**: Cetak mutasi lengkap per anggota dengan saldo berjalan
 - **Pengingat Jatuh Tempo**: Kirim email pengingat angsuran dengan dedup harian
-- **Distribusi SHU**: Hitung jasa modal dari saldo simpanan dan jasa anggota dari bunga pinjaman dibayar, sesuaikan per anggota, lalu finalisasi per tahun
+- **Distribusi SHU**: Hitung jasa modal dari saldo simpanan dan jasa anggota dari bunga pinjaman dibayar, sesuaikan per anggota, finalisasi per tahun, dan posting otomatis ke rekening simpanan anggota
 - **Laporan**: Dashboard statistik, log aktivitas, serta ekspor Excel untuk laporan simpanan, pinjaman, dan arus kas
 - **Role-Based Access Control**: Super Admin, Admin, Bendahara, Anggota
 - **Activity Logging**: Audit trail lengkap

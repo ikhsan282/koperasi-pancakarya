@@ -47,6 +47,15 @@ require __DIR__ . '/../../includes/header.php';
             <div class="stat-value">SAK EP</div>
         </div>
     </div>
+    <?php if (can('reports.kap')): ?>
+    <div class="stat-card">
+        <div class="stat-icon">⚠</div>
+        <div class="stat-info">
+            <div class="stat-label">Laporan KAP</div>
+            <div class="stat-value">Kolektibilitas</div>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>
 
 <div class="card">
@@ -95,6 +104,15 @@ require __DIR__ . '/../../includes/header.php';
                     <a href="<?= url('pages/reports/income_statement.php') ?>" class="btn btn-sm btn-primary">Lihat</a>
                 </td>
             </tr>
+            <?php if (can('reports.kap')): ?>
+            <tr>
+                <td><strong>Laporan KAP (Kualitas Aktiva Produktif)</strong></td>
+                <td>Kolektibilitas kredit: klasifikasi pinjaman berdasarkan keterlambatan (Lancar, KL, Diragukan, Macet) dan NPL ratio</td>
+                <td>
+                    <a href="<?= url('pages/reports/kap_report.php') ?>" class="btn btn-sm btn-primary">Lihat</a>
+                </td>
+            </tr>
+            <?php endif; ?>
         </tbody>
     </table>
 </div>

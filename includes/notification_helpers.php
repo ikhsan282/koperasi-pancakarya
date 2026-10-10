@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/whatsapp_helpers.php';
 
 /**
  * Create an in-app notification
@@ -214,9 +215,15 @@ function notify_member(int $member_id, string $title, string $message, string $t
         $results['email'] = send_email_notification($member['email'], $title, $message);
     }
 
-    // Send SMS if preference allows
+    // Send SMS/WhatsApp if preference allows
     if (in_array($preference, ['sms', 'both']) && !empty($member['phone'])) {
-        $results['sms'] = send_sms_notification($member['phone'], $message);
+        // Try WhatsApp first (modern replacement for SMS)
+        $results['sms'] = send_whatsapp($member['phone'], $message, $ref_type, $ref_id);
+        
+        // Fall back to SMS gateway if WhatsApp fails
+        if (!$results['sms']) {
+            $results['sms'] = send_sms_notification($member['phone'], $message);
+        }
     }
 
     return $results;
