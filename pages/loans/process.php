@@ -3,6 +3,8 @@ require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/notification_helpers.php';
+require_once __DIR__ . '/../../includes/whatsapp_helpers.php';
 
 require_login();
 
@@ -84,6 +86,12 @@ if ($action === 'approve') {
             $ins->execute();
 
             log_activity('approve_loan', "Menyetujui pinjaman {$loan['loan_number']} (single approval)");
+            
+            // Send WhatsApp notification to member
+            $member_id = (int) $loan['member_id'];
+            $wa_message = "Pinjaman {$loan['loan_number']} Anda telah disetujui. Jumlah: " . rupiah($loan['amount']) . ". Silakan ambil di kantor koperasi.";
+            notify_member_whatsapp($member_id, $wa_message, 'loan_approval', $id);
+            
             flash('success', 'Pinjaman telah disetujui. Silakan lanjutkan pencairan dana.');
         } else {
             // Dual approval workflow
@@ -120,6 +128,12 @@ if ($action === 'approve') {
                 $ins->execute();
 
                 log_activity('approve_loan_level2', "Menyetujui pinjaman {$loan['loan_number']} - Level 2 (Final)");
+                
+                // Send WhatsApp notification to member
+                $member_id = (int) $loan['member_id'];
+                $wa_message = "Pinjaman {$loan['loan_number']} Anda telah disetujui. Jumlah: " . rupiah($loan['amount']) . ". Silakan ambil di kantor koperasi.";
+                notify_member_whatsapp($member_id, $wa_message, 'loan_approval', $id);
+                
                 flash('success', 'Pinjaman telah disetujui Level 2 (Final). Silakan lanjutkan pencairan dana.');
             } else {
                 throw new Exception('Status approval tidak valid.');

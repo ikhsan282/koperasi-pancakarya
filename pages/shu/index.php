@@ -24,9 +24,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$periods = db()->query("SELECT p.*, u.full_name AS finalized_by_name,
-    (SELECT COUNT(*) FROM shu_distributions d WHERE d.period_id = p.id) AS member_count
-    FROM shu_periods p LEFT JOIN users u ON u.id = p.finalized_by ORDER BY p.fiscal_year DESC");
+$periods = db()->query("SELECT p.*, 
+    u.full_name AS finalized_by_name,
+    du.full_name AS distributed_by_name,
+    (SELECT COUNT(*) FROM shu_distributions d WHERE d.period_id = p.id) AS member_count,
+    (SELECT SUM(d.total_shu) FROM shu_distributions d WHERE d.period_id = p.id) AS total_distributed
+    FROM shu_periods p 
+    LEFT JOIN users u ON u.id = p.finalized_by 
+    LEFT JOIN users du ON du.id = p.distributed_by
+    ORDER BY p.fiscal_year DESC");
 
 require __DIR__ . '/../../includes/header.php';
 ?>
@@ -51,16 +57,27 @@ require __DIR__ . '/../../includes/header.php';
 <div class="card">
     <h3>Periode SHU Final</h3>
     <table class="table">
-        <thead><tr><th>Tahun</th><th>Total SHU</th><th>Porsi Jasa Modal</th><th>Anggota</th><th>Difinalisasi oleh</th><th>Aksi</th></tr></thead>
+        <thead><tr><th>Tahun</th><th>Total SHU</th><th>Porsi Jasa Modal</th><th>Anggota</th><th>Status</th><th>Difinalisasi</th><th>Aksi</th></tr></thead>
         <tbody>
-        <?php if ($periods->num_rows === 0): ?><tr><td colspan="6" class="text-center">Belum ada periode SHU final.</td></tr>
+        <?php if ($periods->num_rows === 0): ?><tr><td colspan="7" class="text-center">Belum ada periode SHU final.</td></tr>
         <?php else: while ($period = $periods->fetch_assoc()): ?>
             <tr>
                 <td><strong><?= e($period['fiscal_year']) ?></strong></td>
                 <td><?= rupiah($period['total_shu']) ?></td>
                 <td><?= e($period['pct_jasa_modal']) ?>%</td>
-                <td><?= e($period['member_count']) ?></td>
-                <td><?= e($period['finalized_by_name'] ?? '-') ?></td>
+                <td><?= e($period['member_count']) ?> anggota</td>
+                <td>
+                    <?php if ($period['distributed_at']): ?>
+                        <span class="badge badge-success">✓ Diposting</span>
+                        <small class="text-muted d-block"><?= date('d M Y', strtotime($period['distributed_at'])) ?></small>
+                    <?php else: ?>
+                        <span class="badge badge-warning">Belum diposting</span>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <?= e($period['finalized_by_name'] ?? '-') ?>
+                    <small class="text-muted d-block"><?= date('d M Y', strtotime($period['finalized_at'])) ?></small>
+                </td>
                 <td><a href="<?= url('pages/shu/breakdown.php?id=' . $period['id']) ?>" class="btn btn-sm btn-primary">Lihat</a></td>
             </tr>
         <?php endwhile; endif; ?>

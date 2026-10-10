@@ -145,6 +145,18 @@ $stmt->bind_param('i', $user['id']);
 $stmt->execute();
 $all_loans = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
+// SHU: Member's SHU history
+$stmt = db()->prepare("
+    SELECT d.*, p.fiscal_year, p.total_shu as period_total, p.finalized_at
+    FROM shu_distributions d
+    JOIN shu_periods p ON p.id = d.period_id
+    WHERE d.member_id = ?
+    ORDER BY p.fiscal_year DESC
+");
+$stmt->bind_param('i', $member_id);
+$stmt->execute();
+$shu_history = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
 // Build loan payment schedules
 $loan_schedules = [];
 foreach ($all_loans as $loan) {
@@ -483,6 +495,57 @@ foreach ($all_loans as $loan) {
                 <?php endif; ?>
             </div>
 
+            <!-- TAB SHU -->
+            <div class="tab-pane" id="tab-shu">
+                <h6 class="mb-3">Riwayat SHU</h6>
+                <?php if (empty($shu_history)): ?>
+                <p class="text-muted">Belum ada distribusi SHU.</p>
+                <?php else: ?>
+                <?php foreach ($shu_history as $shu): ?>
+                <div class="stat-card mb-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <strong>Tahun Fiskal <?= e($shu['fiscal_year']) ?></strong>
+                            <div class="small text-muted">Difinalisasi: <?= date('d M Y', strtotime($shu['finalized_at'])) ?></div>
+                        </div>
+                        <div class="text-end">
+                            <div class="stat-value" style="font-size: 1.25rem;"><?= rupiah($shu['total_shu']) ?></div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="small text-muted">Dasar Simpanan</div>
+                            <div><?= rupiah($shu['savings_base']) ?></div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">Dasar Pinjaman</div>
+                            <div><?= rupiah($shu['loan_base']) ?></div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">Jasa Modal</div>
+                            <div><?= rupiah($shu['jasa_modal']) ?></div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">Jasa Anggota</div>
+                            <div><?= rupiah($shu['jasa_anggota']) ?></div>
+                        </div>
+                        <?php if ($shu['adjustment'] != 0): ?>
+                        <div class="col-12">
+                            <div class="small text-muted">Penyesuaian</div>
+                            <div><?= rupiah($shu['adjustment']) ?></div>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ($shu['notes']): ?>
+                    <hr>
+                    <div class="small text-muted">Catatan: <?= e($shu['notes']) ?></div>
+                    <?php endif; ?>
+                </div>
+                <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+
             <!-- TAB PROFIL -->
             <div class="tab-pane" id="tab-profil">
                 <h6 class="mb-3">Data Anggota</h6>
@@ -543,6 +606,10 @@ foreach ($all_loans as $loan) {
         <a href="#tab-pinjaman" class="bottom-nav-item" data-tab="tab-pinjaman">
             <i class="bi bi-cash-coin"></i>
             <span>Pinjaman</span>
+        </a>
+        <a href="#tab-shu" class="bottom-nav-item" data-tab="tab-shu">
+            <i class="bi bi-percent"></i>
+            <span>SHU</span>
         </a>
         <a href="#tab-profil" class="bottom-nav-item" data-tab="tab-profil">
             <i class="bi bi-person"></i>

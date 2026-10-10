@@ -106,12 +106,20 @@ require __DIR__ . '/../../includes/header.php';
     <?php if ($id > 0 && can('reports.export')): ?>
         <a href="<?= url('pages/shu/breakdown.php?id=' . $id . '&format=pdf') ?>" class="btn btn-success">Export PDF</a>
     <?php endif; ?>
+    <?php if ($id > 0 && !($period['distributed_at'] ?? null) && can('shu.distribute')): ?>
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('distributeModal').style.display='block'">
+            <i class="bi bi-cash-stack"></i> Posting ke Simpanan
+        </button>
+    <?php endif; ?>
 </div>
 
 <div class="report-summary">
     <div class="report-card"><h4>Total SHU</h4><div class="report-value"><?= rupiah($period['total_shu']) ?></div><small>Tahun <?= e($period['fiscal_year']) ?></small></div>
     <div class="report-card"><h4>Porsi Jasa Modal</h4><div class="report-value"><?= e($period['pct_jasa_modal']) ?>%</div><small>Sisanya jasa anggota <?= 100 - (int) $period['pct_jasa_modal'] ?>%</small></div>
     <div class="report-card"><h4>Total Terdistribusi</h4><div class="report-value"><?= rupiah($totals['total_shu']) ?></div><small><?= abs($totals['total_shu'] - (float) $period['total_shu']) < 0.005 ? 'Sesuai total SHU' : 'Belum sesuai total SHU' ?></small></div>
+    <?php if ($period['distributed_at'] ?? null): ?>
+    <div class="report-card"><h4>Status Distribusi</h4><div class="report-value text-success">✓ Diposting</div><small><?= date('d M Y', strtotime($period['distributed_at'])) ?></small></div>
+    <?php endif; ?>
 </div>
 
 <div class="card">
@@ -173,5 +181,36 @@ require __DIR__ . '/../../includes/header.php';
     </form>
     <?php endif; ?>
 </div>
+
+<?php if ($id > 0 && !($period['distributed_at'] ?? null) && can('shu.distribute')): ?>
+<!-- Distribution Modal -->
+<div id="distributeModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; padding:2rem;">
+    <div class="card" style="max-width:500px; margin:auto;">
+        <h3>Posting SHU ke Simpanan</h3>
+        <p>SHU akan diposting sebagai transaksi deposit ke rekening simpanan anggota.</p>
+        <form method="post" action="<?= url('pages/shu/distribute.php') ?>">
+            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+            <input type="hidden" name="period_id" value="<?= $id ?>">
+            <div class="form-group">
+                <label for="savings_type_id">Jenis Simpanan *</label>
+                <select id="savings_type_id" name="savings_type_id" required>
+                    <option value="">-- Pilih Jenis Simpanan --</option>
+                    <?php
+                    $types = db()->query("SELECT id, name FROM savings_types WHERE status = 'active' ORDER BY name");
+                    while ($type = $types->fetch_assoc()):
+                    ?>
+                    <option value="<?= $type['id'] ?>"><?= e($type['name']) ?></option>
+                    <?php endwhile; ?>
+                </select>
+                <small>Pilih jenis simpanan untuk menerima dana SHU. Akun akan dibuat otomatis jika belum ada.</small>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('distributeModal').style.display='none'">Batal</button>
+                <button type="submit" class="btn btn-primary" onclick="return confirm('Yakin posting SHU ke simpanan anggota? Transaksi tidak dapat dibatalkan.');">Posting SHU</button>
+            </div>
+        </form>
+    </div>
+</div>
+<?php endif; ?>
 
 <?php require __DIR__ . '/../../includes/footer.php'; ?>

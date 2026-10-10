@@ -13,6 +13,7 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/notification_helpers.php';
+require_once __DIR__ . '/../includes/whatsapp_helpers.php';
 
 // Get reminder days setting
 $stmt = db()->prepare("SELECT value FROM settings WHERE `key` = 'reminder_days_before'");
@@ -71,10 +72,20 @@ foreach ($payments as $payment) {
             'loan_payment',
             (int) $payment['payment_id']
         );
+        
+        // Send WhatsApp notification if preference allows
+        $whatsapp_sent = false;
+        if (in_array($payment['notification_preference'], ['sms', 'both']) && !empty($payment['phone'])) {
+            $wa_message = "Pengingat: Angsuran pinjaman {$payment['loan_number']} jatuh tempo " 
+                . date('d/m/Y', strtotime($payment['due_date'])) . ". Total: " . rupiah($remaining) 
+                . ". Mohon segera dibayar. Terima kasih.";
+            $whatsapp_sent = send_whatsapp($payment['phone'], $wa_message, 'loan_payment', (int) $payment['payment_id']);
+        }
 
         if ($result['in_app']) {
+            $wa_status = $whatsapp_sent ? ' + WA' : '';
             $sent_count++;
-            echo "[OK] Notifikasi terkirim ke {$payment['full_name']} (#{$payment['member_number']})\n";
+            echo "[OK] Notifikasi terkirim ke {$payment['full_name']} (#{$payment['member_number']}){$wa_status}\n";
         } else {
             $error_count++;
             echo "[ERROR] Gagal membuat notifikasi untuk {$payment['full_name']}\n";

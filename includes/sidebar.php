@@ -21,6 +21,7 @@ $current_url = $_SERVER['REQUEST_URI'] ?? '';
         <?php if (can('notifications.view')): ?><a href="<?= url('pages/notifications/index.php') ?>">🔔 Notifikasi</a><?php endif; ?>
         <?php if (can('reports.view')): ?><a href="<?= url('pages/reports/index.php') ?>">▤ Laporan</a><?php endif; ?>
         <?php if (can('shu.view')): ?><a href="<?= url('pages/shu/index.php') ?>">% SHU</a><?php endif; ?>
+        <?php if (can('backup.create')): ?><a href="<?= url('pages/backup/index.php') ?>">💾 Backup</a><?php endif; ?>
         <?php if (can('settings.manage')): ?><a href="<?= url('pages/settings/index.php') ?>">⚙ Pengaturan</a><?php endif; ?>
     </nav>
     <div class="sidebar-user">
