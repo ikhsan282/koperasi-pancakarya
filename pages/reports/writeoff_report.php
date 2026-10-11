@@ -49,56 +49,6 @@ while ($row = $writeoffs->fetch_assoc()) {
     }
 }
 
-if ($export) {
-    header_csv_download('laporan_hapus_buku_' . $period_from . '_' . $period_to . '.csv');
-    $out = fopen('php://output', 'w');
-    fprintf($out, "\xEF\xBB\xBF");
-    
-    fputcsv($out, ['Laporan Hapus Buku Kredit Macet']);
-    fputcsv($out, ['Periode', $period_from . ' s/d ' . $period_to]);
-    fputcsv($out, []);
-    
-    fputcsv($out, [
-        'Tanggal Writeoff',
-        'No. Pinjaman',
-        'No. Anggota',
-        'Nama Anggota',
-        'Pokok Pinjaman',
-        'Sisa Tagihan',
-        'Jumlah Writeoff',
-        'Jenis',
-        'Disetujui Oleh',
-        'Tgl Persetujuan'
-    ]);
-    
-    foreach ($data as $row) {
-        $is_full = ($row['writeoff_amount'] >= $row['remaining_balance'] - 0.01);
-        fputcsv($out, [
-            date('d/m/Y', strtotime($row['writeoff_date'])),
-            $row['loan_number'],
-            $row['member_number'],
-            $row['full_name'],
-            $row['loan_amount'],
-            $row['remaining_balance'],
-            $row['writeoff_amount'],
-            $is_full ? 'Full' : 'Partial',
-            $row['approver_name'],
-            date('d/m/Y H:i', strtotime($row['approved_at']))
-        ]);
-    }
-    
-    fputcsv($out, []);
-    fputcsv($out, ['RINGKASAN']);
-    fputcsv($out, ['Total Pinjaman yang Dihapus Buku', count($data)]);
-    fputcsv($out, ['Full Writeoff', $count_full]);
-    fputcsv($out, ['Partial Writeoff', $count_partial]);
-    fputcsv($out, ['Total Pokok Pinjaman', $total_loan_amount]);
-    fputcsv($out, ['Total Jumlah Writeoff', $total_writeoff]);
-    
-    fclose($out);
-    exit;
-}
-
 require __DIR__ . '/../../includes/header.php';
 ?>
 
@@ -114,7 +64,7 @@ require __DIR__ . '/../../includes/header.php';
         <a href="<?= url('pages/loans/writeoff_list.php') ?>" class="btn btn-secondary">Kelola Writeoff</a>
         <?php if (count($data) > 0): ?>
             <button onclick="window.print()" class="btn btn-secondary">🖨 Cetak</button>
-            <a href="<?= url('pages/reports/writeoff_report.php?period_from=' . urlencode($period_from) . '&period_to=' . urlencode($period_to) . '&export=csv') ?>" class="btn btn-success">📥 Export CSV</a>
+            <a href="writeoff_report_export.php?period_from=<?= urlencode($period_from) ?>&period_to=<?= urlencode($period_to) ?>" class="btn btn-success">📥 Export CSV</a>
         <?php endif; ?>
     </div>
 </div>

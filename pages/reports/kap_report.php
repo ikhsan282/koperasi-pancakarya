@@ -100,50 +100,6 @@ $npl_amount = $summary['KURANG LANCAR']['outstanding'] + $summary['DIRAGUKAN']['
 $npl_ratio = $total_outstanding > 0 ? ($npl_amount / $total_outstanding) * 100 : 0;
 
 // Export to PDF
-if (($_GET['format'] ?? '') === 'pdf') {
-    require_permission('reports.export');
-    require_once __DIR__ . '/../../includes/pdf.php';
-    $pdf = new SimplePDF('Laporan KAP (Kualitas Aktiva Produktif)', APP_NAME, true);
-    $pdf->heading('Laporan KAP (Kualitas Aktiva Produktif)', 1);
-    $pdf->text('Per ' . date('d/m/Y'), 10);
-    $pdf->ln(2);
-    $pdf->text("NPL Ratio: " . number_format($npl_ratio, 2) . '%', 10);
-    $pdf->ln(4);
-    
-    $tbl = [];
-    foreach ($rows as $row) {
-        $tbl[] = [
-            $row['member_number'],
-            $row['full_name'],
-            $row['loan_number'],
-            $row['days_overdue'] ?? 0,
-            $row['kolektibilitas'],
-            rupiah($row['outstanding']),
-        ];
-    }
-    
-    $pdf->table(
-        ['No. Anggota', 'Nama', 'No. Pinjaman', 'Hari Telat', 'Kolektibilitas', 'Outstanding'],
-        $tbl
-    );
-    
-    $pdf->ln(4);
-    $pdf->heading('Ringkasan per Kategori', 2);
-    $summary_tbl = [];
-    foreach ($summary as $status => $data) {
-        $summary_tbl[] = [
-            $status,
-            $data['count'],
-            rupiah($data['outstanding'])
-        ];
-    }
-    $pdf->table(
-        ['Kategori', 'Jumlah', 'Total Outstanding'],
-        $summary_tbl
-    );
-    
-    $pdf->download('Laporan_KAP_' . date('d_m_Y') . '.pdf');
-}
 
 // Export to XLSX
 if (($_GET['format'] ?? '') === 'xlsx') {
@@ -233,7 +189,7 @@ require __DIR__ . '/../../includes/header.php';
     <?php if (can('reports.export')): ?>
         <a href="<?= url('pages/reports/kap_report.php?status=' . urlencode($filter_status) . '&format=csv') ?>" class="btn btn-success">Export CSV</a>
         <a href="<?= url('pages/reports/kap_report.php?status=' . urlencode($filter_status) . '&format=xlsx') ?>" class="btn btn-success">Export Excel</a>
-        <a href="<?= url('pages/reports/kap_report.php?status=' . urlencode($filter_status) . '&format=pdf') ?>" class="btn btn-success">Export PDF</a>
+        <a href="kap_report_export.php?status=<?= urlencode($filter_status) ?>" class="btn btn-success">Export PDF</a>
     <?php endif; ?>
 </div>
 

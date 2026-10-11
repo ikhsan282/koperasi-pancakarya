@@ -128,57 +128,6 @@ if ($breakdown) {
     $account_breakdown = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 }
 
-// CSV Export
-if (($_GET['format'] ?? '') === 'csv') {
-    require_permission('reports.export');
-    header_csv_download("Laporan_Arus_Kas_{$start_date}_{$end_date}.csv");
-    $out = fopen('php://output', 'w');
-    fwrite($out, "\xEF\xBB\xBF");
-    
-    fputcsv($out, ['LAPORAN ARUS KAS']);
-    fputcsv($out, ['Periode', $period_label]);
-    fputcsv($out, []);
-    
-    fputcsv($out, ['ARUS KAS OPERASIONAL']);
-    fputcsv($out, ['Penerimaan Kas']);
-    fputcsv($out, ['  Angsuran Pinjaman', number_format($receipts['loan_payment'], 2, '.', '')]);
-    fputcsv($out, ['  Setoran Simpanan', number_format($receipts['savings_deposit'], 2, '.', '')]);
-    fputcsv($out, ['Total Penerimaan', number_format($total_receipts, 2, '.', '')]);
-    fputcsv($out, []);
-    fputcsv($out, ['Pengeluaran Kas']);
-    fputcsv($out, ['  Pencairan Pinjaman', number_format($disbursements['loan_disbursement'], 2, '.', '')]);
-    fputcsv($out, ['  Penarikan Simpanan', number_format($disbursements['savings_withdrawal'], 2, '.', '')]);
-    fputcsv($out, ['  Beban Operasional', number_format($disbursements['expense'], 2, '.', '')]);
-    fputcsv($out, ['  Lain-lain', number_format($disbursements['other'], 2, '.', '')]);
-    fputcsv($out, ['Total Pengeluaran', number_format($total_disbursements, 2, '.', '')]);
-    fputcsv($out, []);
-    fputcsv($out, ['Arus Kas Bersih Operasional', number_format($net_operational, 2, '.', '')]);
-    fputcsv($out, []);
-    fputcsv($out, ['SALDO KAS']);
-    fputcsv($out, ['Saldo Awal Periode', number_format($opening_balance, 2, '.', '')]);
-    fputcsv($out, ['Arus Kas Bersih', number_format($net_change, 2, '.', '')]);
-    fputcsv($out, ['Saldo Akhir Periode', number_format($closing_balance, 2, '.', '')]);
-    
-    if ($breakdown && count($account_breakdown) > 0) {
-        fputcsv($out, []);
-        fputcsv($out, ['BREAKDOWN PER AKUN']);
-        fputcsv($out, ['Nama Akun', 'Tipe', 'Debit', 'Kredit', 'Net']);
-        foreach ($account_breakdown as $acc) {
-            $net = (float)$acc['debit'] - (float)$acc['credit'];
-            fputcsv($out, [
-                $acc['account_name'],
-                $acc['account_type'],
-                number_format($acc['debit'], 2, '.', ''),
-                number_format($acc['credit'], 2, '.', ''),
-                number_format($net, 2, '.', ''),
-            ]);
-        }
-    }
-    
-    fclose($out);
-    exit;
-}
-
 require __DIR__ . '/../../includes/header.php';
 ?>
 
@@ -232,7 +181,7 @@ require __DIR__ . '/../../includes/header.php';
     
     <?php if (can('reports.export')): ?>
         <button onclick="window.print()" class="btn btn-success">Print</button>
-        <a href="?<?= http_build_query(array_merge($_GET, ['format' => 'csv'])) ?>" class="btn btn-success">Export CSV</a>
+        <a href="cashflow_statement_export.php?<?= http_build_query($_GET) ?>" class="btn btn-success">Export CSV</a>
     <?php endif; ?>
 </div>
 

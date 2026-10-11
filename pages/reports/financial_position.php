@@ -68,92 +68,6 @@ $total_passiva = $total_kewajiban + $total_ekuitas;
 $balance_diff = $total_aset - $total_passiva;
 $is_balanced = abs($balance_diff) < 0.01;
 
-// PDF Export
-if (($_GET['format'] ?? '') === 'pdf') {
-    require_permission('reports.export');
-    require_once __DIR__ . '/../../includes/pdf.php';
-    $pdf = new SimplePDF("Laporan Posisi Keuangan {$year}", APP_NAME, false);
-    $pdf->heading("LAPORAN POSISI KEUANGAN", 1);
-    $pdf->text("Per 31 Desember {$year}", 11.0, false);
-    $pdf->ln(8);
-    
-    $pdf->heading("ASET", 2);
-    $pdf->table(
-        ['Keterangan', 'Jumlah (Rp)'],
-        [
-            ['Kas dan Bank', rupiah($cash_bank)],
-            ['Piutang Pinjaman', rupiah($loan_receivables)],
-            ['Nilai Agunan', rupiah($collateral_value)],
-            ['TOTAL ASET', rupiah($total_aset)],
-        ],
-        [3, 2]
-    );
-    
-    $pdf->heading("KEWAJIBAN", 2);
-    $pdf->table(
-        ['Keterangan', 'Jumlah (Rp)'],
-        [
-            ['Simpanan Anggota', rupiah($member_savings)],
-            ['TOTAL KEWAJIBAN', rupiah($total_kewajiban)],
-        ],
-        [3, 2]
-    );
-    
-    $pdf->heading("EKUITAS", 2);
-    $pdf->table(
-        ['Keterangan', 'Jumlah (Rp)'],
-        [
-            ['Modal Koperasi', rupiah($modal_koperasi)],
-            ['SHU Tahun Berjalan', rupiah($shu_current_year)],
-            ['TOTAL EKUITAS', rupiah($total_ekuitas)],
-        ],
-        [3, 2]
-    );
-    
-    $pdf->ln(5);
-    $pdf->text("Total Kewajiban + Ekuitas: " . rupiah($total_passiva), 11.0, true);
-    $pdf->text("Status: " . ($is_balanced ? "BALANCE" : "TIDAK BALANCE (Selisih: " . rupiah($balance_diff) . ")"), 11.0, false);
-    
-    $pdf->download("Laporan_Posisi_Keuangan_{$year}.pdf");
-}
-
-// CSV Export
-if (($_GET['format'] ?? '') === 'csv') {
-    require_permission('reports.export');
-    header_csv_download("Laporan_Posisi_Keuangan_{$year}.csv");
-    echo "\xEF\xBB\xBF"; // UTF-8 BOM
-    $out = fopen('php://output', 'w');
-    
-    fputcsv($out, ['LAPORAN POSISI KEUANGAN']);
-    fputcsv($out, ['Tahun', $year]);
-    fputcsv($out, []);
-    
-    fputcsv($out, ['ASET']);
-    fputcsv($out, ['Kas dan Bank', $cash_bank]);
-    fputcsv($out, ['Piutang Pinjaman', $loan_receivables]);
-    fputcsv($out, ['Nilai Agunan', $collateral_value]);
-    fputcsv($out, ['Total Aset', $total_aset]);
-    fputcsv($out, []);
-    
-    fputcsv($out, ['KEWAJIBAN']);
-    fputcsv($out, ['Simpanan Anggota', $member_savings]);
-    fputcsv($out, ['Total Kewajiban', $total_kewajiban]);
-    fputcsv($out, []);
-    
-    fputcsv($out, ['EKUITAS']);
-    fputcsv($out, ['Modal Koperasi', $modal_koperasi]);
-    fputcsv($out, ['SHU Tahun Berjalan', $shu_current_year]);
-    fputcsv($out, ['Total Ekuitas', $total_ekuitas]);
-    fputcsv($out, []);
-    
-    fputcsv($out, ['Total Kewajiban + Ekuitas', $total_passiva]);
-    fputcsv($out, ['Selisih', $balance_diff]);
-    fputcsv($out, ['Status', $is_balanced ? 'BALANCE' : 'TIDAK BALANCE']);
-    
-    fclose($out);
-    exit;
-}
-
 require __DIR__ . '/../../includes/header.php';
 ?>
 
@@ -186,10 +100,10 @@ require __DIR__ . '/../../includes/header.php';
         <button onclick="window.print()" class="btn btn-secondary">
             <span class="icon">🖨</span> Cetak
         </button>
-        <a href="?year=<?= $year ?>&format=pdf" class="btn btn-danger">
+        <a href="financial_position_export.php?year=<?= $year ?>&format=pdf" class="btn btn-danger">
             <span class="icon">📄</span> Export PDF
         </a>
-        <a href="?year=<?= $year ?>&format=csv" class="btn btn-success">
+        <a href="financial_position_export.php?year=<?= $year ?>&format=csv" class="btn btn-success">
             <span class="icon">📊</span> Export CSV
         </a>
     </div>

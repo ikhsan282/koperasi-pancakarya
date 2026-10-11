@@ -71,35 +71,6 @@ $totals = [
     'expense' => array_sum(array_column($rows, 'expense')),
 ];
 
-if (($_GET['format'] ?? '') === 'pdf') {
-    require_permission('reports.export');
-    require_once __DIR__ . '/../../includes/pdf.php';
-    $pdf = new SimplePDF('Laporan Arus Kas ' . $year, APP_NAME, true);
-    $pdf->heading('Laporan Arus Kas ' . $year, 1);
-    $pdf->ln(4);
-    $tbl = [];
-    foreach ($rows as $row) {
-        $tbl[] = [
-            $row['month'],
-            rupiah($row['deposit']),
-            rupiah($row['installment']),
-            rupiah($row['income']),
-            rupiah($row['withdrawal']),
-            rupiah($row['disbursement']),
-            rupiah($row['expense']),
-            rupiah($row['net']),
-            rupiah($row['cumulative']),
-        ];
-    }
-    $tbl[] = ['Total', rupiah($totals['deposit']), rupiah($totals['installment']), rupiah($totals['income']),
-        rupiah($totals['withdrawal']), rupiah($totals['disbursement']), rupiah($totals['expense']),
-        rupiah($totals['income'] - $totals['expense']), rupiah($cumulative)];
-    $pdf->table(
-        ['Bulan', 'Setoran', 'Angsuran', 'Pemasukan', 'Penarikan', 'Pencairan', 'Pengeluaran', 'Surplus', 'Kumulatif'],
-        $tbl
-    );
-    $pdf->download("Laporan Arus Kas {$year}.pdf");
-}
 
 if (($_GET['format'] ?? '') === 'xlsx') {
     require_permission('reports.export');
@@ -144,7 +115,7 @@ require __DIR__ . '/../../includes/header.php';
     <?php if (can('reports.export')): ?>
         <a href="<?= url('pages/reports/cashflow_export.php?year=' . $year) ?>" class="btn btn-success">Export CSV</a>
         <a href="<?= url('pages/reports/cashflow.php?year=' . $year . '&format=xlsx') ?>" class="btn btn-success">Export Excel</a>
-        <a href="<?= url('pages/reports/cashflow.php?year=' . $year . '&format=pdf') ?>" class="btn btn-success">Export PDF</a>
+        <a href="cashflow_export.php?year=<?= $year ?>" class="btn btn-success">Export PDF</a>
     <?php endif; ?>
 </div>
 

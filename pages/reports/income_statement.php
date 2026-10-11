@@ -151,76 +151,6 @@ $changes = [
     'net_income' => calc_change($net_income, $prev_net_income),
 ];
 
-// CSV Export
-if (($_GET['format'] ?? '') === 'csv') {
-    require_permission('reports.export');
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="Laporan_Laba_Rugi_' . str_replace(' ', '_', $period_label) . '.csv"');
-    $out = fopen('php://output', 'w');
-    fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
-    fputcsv($out, ['LAPORAN LABA RUGI']);
-    fputcsv($out, [APP_NAME]);
-    fputcsv($out, ['Periode: ' . $period_label]);
-    fputcsv($out, []);
-    fputcsv($out, ['Keterangan', 'Jumlah (Rp)', 'Perubahan (%)']);
-    fputcsv($out, []);
-    fputcsv($out, ['PENDAPATAN']);
-    fputcsv($out, ['Pendapatan Bunga Pinjaman', $interest_income, $changes['interest_income']]);
-    fputcsv($out, ['Pendapatan Biaya Admin', $admin_fee_income, $changes['admin_fee_income']]);
-    fputcsv($out, ['Pendapatan Denda', $penalty_income, $changes['penalty_income']]);
-    fputcsv($out, ['TOTAL PENDAPATAN', $total_revenue, $changes['total_revenue']]);
-    fputcsv($out, []);
-    fputcsv($out, ['BEBAN']);
-    fputcsv($out, ['Beban Bunga Simpanan', $interest_expense, $changes['interest_expense']]);
-    fputcsv($out, ['Beban Operasional', $operational_expense, $changes['operational_expense']]);
-    fputcsv($out, ['TOTAL BEBAN', $total_expense, $changes['total_expense']]);
-    fputcsv($out, []);
-    fputcsv($out, ['LABA BERSIH', $net_income, $changes['net_income']]);
-    fclose($out);
-    exit;
-}
-
-// PDF Export
-if (($_GET['format'] ?? '') === 'pdf') {
-    require_permission('reports.export');
-    require_once __DIR__ . '/../../includes/pdf.php';
-    $pdf = new SimplePDF('Laporan Laba Rugi', APP_NAME, false);
-    $pdf->heading('LAPORAN LABA RUGI', 1);
-    $pdf->text('Periode: ' . $period_label, 11.0, false);
-    $pdf->ln(8);
-    
-    $pdf->heading('PENDAPATAN', 2);
-    $pdf->table(
-        ['Keterangan', 'Jumlah (Rp)', 'Perubahan (%)'],
-        [
-            ['Pendapatan Bunga Pinjaman', rupiah($interest_income), $changes['interest_income'] . '%'],
-            ['Pendapatan Biaya Admin', rupiah($admin_fee_income), $changes['admin_fee_income'] . '%'],
-            ['Pendapatan Denda', rupiah($penalty_income), $changes['penalty_income'] . '%'],
-            ['TOTAL PENDAPATAN', rupiah($total_revenue), $changes['total_revenue'] . '%'],
-        ]
-    );
-    
-    $pdf->heading('BEBAN', 2);
-    $pdf->table(
-        ['Keterangan', 'Jumlah (Rp)', 'Perubahan (%)'],
-        [
-            ['Beban Bunga Simpanan', rupiah($interest_expense), $changes['interest_expense'] . '%'],
-            ['Beban Operasional', rupiah($operational_expense), $changes['operational_expense'] . '%'],
-            ['TOTAL BEBAN', rupiah($total_expense), $changes['total_expense'] . '%'],
-        ]
-    );
-    
-    $pdf->heading('LABA BERSIH', 2);
-    $pdf->table(
-        ['Keterangan', 'Jumlah (Rp)', 'Perubahan (%)'],
-        [
-            ['LABA BERSIH', rupiah($net_income), $changes['net_income'] . '%'],
-        ]
-    );
-    
-    $pdf->download("Laporan_Laba_Rugi_{$period_label}.pdf");
-}
-
 require __DIR__ . '/../../includes/header.php';
 ?>
 
@@ -270,8 +200,8 @@ require __DIR__ . '/../../includes/header.php';
     
     <?php if (can('reports.export')): ?>
         <button onclick="window.print()" class="btn btn-success">Print</button>
-        <a href="<?= url('pages/reports/income_statement.php?' . http_build_query(array_merge($_GET, ['format' => 'csv']))) ?>" class="btn btn-success">Export CSV</a>
-        <a href="<?= url('pages/reports/income_statement.php?' . http_build_query(array_merge($_GET, ['format' => 'pdf']))) ?>" class="btn btn-success">Export PDF</a>
+        <a href="income_statement_export.php?<?= http_build_query(array_merge($_GET, ['format' => 'csv'])) ?>" class="btn btn-success">Export CSV</a>
+        <a href="income_statement_export.php?<?= http_build_query(array_merge($_GET, ['format' => 'pdf'])) ?>" class="btn btn-success">Export PDF</a>
     <?php endif; ?>
 </div>
 
